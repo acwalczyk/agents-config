@@ -2,6 +2,7 @@
 {{- $root := .chezmoi.workingTree -}}
 {{- $current := dict -}}
 {{- if trim .chezmoi.stdin -}}{{- $current = fromJson .chezmoi.stdin -}}{{- end -}}
+{{- if ne (get . "agentsConfigComponent" | default "all") "plugins" -}}
 {{- $config := include (joinPath $root "config/claude.json") | fromJson -}}
 {{- range $key, $value := $config -}}
 {{- if eq $key "permissions" -}}
@@ -13,8 +14,14 @@
 {{- $current = setValueAtPath (list $key) $value $current -}}
 {{- end -}}
 {{- end -}}
+{{- end -}}
 {{- $plugins := include (joinPath $root "plugins/manifest.json") | fromJson -}}
 {{- range $plugin := $plugins.claude -}}
 {{- $current = setValueAtPath (list "enabledPlugins" $plugin) true $current -}}
+{{- end -}}
+{{- range $plugin := $plugins.disabled.claude -}}
+{{- if hasKey (get $current "enabledPlugins" | default dict) $plugin -}}
+{{- $current = setValueAtPath (list "enabledPlugins" $plugin) false $current -}}
+{{- end -}}
 {{- end -}}
 {{ $current | toPrettyJson }}

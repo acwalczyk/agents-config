@@ -21,7 +21,9 @@ applied. See `claude-profiles.md` for the live probe results and remaining UI ch
 1. Claude provider choice is resolved: keep both with explicit per-task launch
    profiles. See `claude-profiles.md`. Existing shell/default settings remain
    unchanged while the named profiles and T3 instances are verified.
-2. Decide whether to keep the older personal Jira plugin alongside the team plugin.
+2. Jira selection is resolved: keep `jira@ai-helpers` and disable `jira@personal`
+   in Codex, retaining the old installation. User-level plugin refresh is complete;
+   older project-scoped Claude installations are recorded in `plugin-selection.md`.
 3. Use the existing upstream T3 installation first if its native Claude/Codex
    providers meet the per-task selection requirement. Provider settings and auth
    remain T3-owned; a blank `config/t3.json` makes no app changes.

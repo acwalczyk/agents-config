@@ -85,6 +85,11 @@ def validate_source():
         for plugin in plugins[agent]:
             if "@" not in plugin or plugin.rsplit("@", 1)[1] not in plugins["marketplaces"]:
                 raise ValueError(f"Unknown marketplace in {agent} selection")
+        disabled = plugins.get("disabled", {}).get(agent, [])
+        if not isinstance(disabled, list) or any(not isinstance(item, str) or "@" not in item for item in disabled):
+            raise ValueError(f"Invalid disabled plugin selection for {agent}")
+        if set(plugins[agent]) & set(disabled):
+            raise ValueError(f"Conflicting enabled/disabled plugin selection for {agent}")
     for profile in ("vertex", "enmaas"):
         value = load_json(ROOT / f"profiles/claude/{profile}.json")
         if not isinstance(value.get("env"), dict) or not all(isinstance(v, str) for v in value["env"].values()):
@@ -99,7 +104,10 @@ def validate_source():
 class Deployment:
     def __init__(self, destination, workspace, component="all"):
         self.destination = destination
-        self.selected_targets = [name for name in targets() if component == "all" or name.startswith(".t3/")]
+        self.selected_targets = [name for name in targets() if
+            component == "all" or
+            (component == "t3" and name.startswith(".t3/")) or
+            (component == "plugins" and name in {".claude/settings.json", ".codex/config.toml"})]
         binary = os.environ.get("CHEZMOI") or shutil.which("chezmoi")
         if not binary:
             raise ValueError("chezmoi missing; install with brew install chezmoi, then retry")
@@ -107,6 +115,7 @@ class Deployment:
         config.touch()
         self.command = [
             binary, "--source", str(ROOT), "--working-tree", str(ROOT),
+            "--override-data", json.dumps({"agentsConfigComponent": component}),
             "--destination", str(destination), "--config", str(config),
             "--cache", str(workspace / "cache"),
             "--persistent-state", str(workspace / "state.boltdb"), "--no-tty",
@@ -230,7 +239,7 @@ def main():
     modes.add_argument("--restore", type=Path, metavar="BACKUP", help="restore if files have not changed since apply")
     parser.add_argument("--destination", type=Path, default=Path.home())
     parser.add_argument("--backup-root", type=Path, default=Path.home() / ".local/state/agents-config/backups")
-    parser.add_argument("--component", choices=("all", "t3"), default="all", help="limit preview/apply to one component")
+    parser.add_argument("--component", choices=("all", "t3", "plugins"), default="all", help="limit preview/apply to one component")
     args = parser.parse_args()
     destination = args.destination.expanduser().resolve()
     try:

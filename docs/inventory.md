@@ -4,6 +4,8 @@ Read-only inspection of known AI configuration locations, shell startup and
 relevant development directories. This was a targeted audit, not an exhaustive
 scan of every personal directory. No credential values were copied or logged.
 `versions.lock.json` records the observed tool versions and selected plugin caches.
+The findings below describe the initial audit. Subsequent provider and plugin
+changes are recorded in `claude-profiles.md` and `plugin-selection.md`.
 
 ## Active tools and state
 

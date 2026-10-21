@@ -1,5 +1,5 @@
 {
-  "observed_at": "2026-10-21T20:08:14.747602+00:00",
+  "observed_at": "2026-10-21T21:15:11.747938+00:00",
   "kind": "observations; not a binary/plugin resolution lock",
   "deployment_tested_with": {
     "chezmoi": "2.73.3",
@@ -8,7 +8,7 @@
   "tools": {
     "claude": "2.1.304 (Claude Code)",
     "codex": "codex-cli 0.163.0",
-    "chezmoi": "missing",
+    "chezmoi": "chezmoi version v2.73.3, commit 63093ac0e26e803817ced0e2184cb57c4f273388, built at 2026-10-20T15:09:46Z, built by Homebrew",
     "uv": "uv 0.12.1 (Homebrew 2026-07-31 aarch64-apple-darwin)",
     "gh": "gh version 2.97.0 (2026-07-31)",
     "python3": "Python 3.14.7",
@@ -17,101 +17,177 @@
   "selected_plugins": {
     "claude:openshift-developer@ai-helpers": {
       "enabled": true,
+      "desired_enabled": true,
       "registered_versions": [
-        "1.1.14"
+        "1.1.34"
       ],
       "cached_versions": [
-        "1.1.14"
+        "1.1.14",
+        "1.1.34"
+      ],
+      "registered_scopes": [
+        {
+          "scope": "user",
+          "version": "1.1.34"
+        }
       ]
     },
     "claude:golang@ai-helpers": {
       "enabled": true,
+      "desired_enabled": true,
       "registered_versions": [
-        "0.3.1"
+        "0.7.0"
       ],
       "cached_versions": [
-        "0.3.1"
+        "0.3.1",
+        "0.7.0"
+      ],
+      "registered_scopes": [
+        {
+          "scope": "user",
+          "version": "0.7.0"
+        }
       ]
     },
     "claude:gcp-hcp@gcp-hcp": {
       "enabled": true,
+      "desired_enabled": true,
       "registered_versions": [
-        "0.0.4",
+        "0.0.6",
         "0.0.4"
       ],
       "cached_versions": [
-        "0.0.4"
+        "0.0.4",
+        "0.0.6"
+      ],
+      "registered_scopes": [
+        {
+          "scope": "user",
+          "version": "0.0.6"
+        },
+        {
+          "scope": "project",
+          "version": "0.0.4"
+        }
       ]
     },
     "claude:hcp@ai-helpers": {
       "enabled": true,
+      "desired_enabled": true,
       "registered_versions": [
-        "0.0.2"
+        "0.0.3"
       ],
       "cached_versions": [
-        "0.0.2"
+        "0.0.2",
+        "0.0.3"
+      ],
+      "registered_scopes": [
+        {
+          "scope": "user",
+          "version": "0.0.3"
+        }
       ]
     },
     "claude:jira@ai-helpers": {
       "enabled": true,
+      "desired_enabled": true,
       "registered_versions": [
-        "0.9.1",
+        "0.9.6",
         "0.9.1"
       ],
       "cached_versions": [
-        "0.9.1"
+        "0.9.1",
+        "0.9.6"
+      ],
+      "registered_scopes": [
+        {
+          "scope": "user",
+          "version": "0.9.6"
+        },
+        {
+          "scope": "project",
+          "version": "0.9.1"
+        }
       ]
     },
     "claude:gopls-lsp@claude-plugins-official": {
       "enabled": true,
+      "desired_enabled": true,
       "registered_versions": [
         "1.0.0"
       ],
       "cached_versions": [
         "1.0.0"
+      ],
+      "registered_scopes": [
+        {
+          "scope": "user",
+          "version": "1.0.0"
+        }
       ]
     },
     "codex:openshift-developer@ai-helpers": {
       "enabled": true,
+      "desired_enabled": true,
       "registered_versions": [],
       "cached_versions": [
-        "1.1.33"
-      ]
+        "1.1.34"
+      ],
+      "registered_scopes": []
     },
     "codex:golang@ai-helpers": {
       "enabled": true,
+      "desired_enabled": true,
       "registered_versions": [],
       "cached_versions": [
         "0.7.0"
-      ]
+      ],
+      "registered_scopes": []
     },
     "codex:gcp-hcp@gcp-hcp": {
       "enabled": true,
+      "desired_enabled": true,
       "registered_versions": [],
       "cached_versions": [
         "0.0.6"
-      ]
+      ],
+      "registered_scopes": []
     },
     "codex:hcp@ai-helpers": {
       "enabled": true,
+      "desired_enabled": true,
       "registered_versions": [],
       "cached_versions": [
         "0.0.3"
-      ]
+      ],
+      "registered_scopes": []
     },
     "codex:jira@ai-helpers": {
       "enabled": true,
+      "desired_enabled": true,
       "registered_versions": [],
       "cached_versions": [
         "0.9.6"
-      ]
+      ],
+      "registered_scopes": []
     },
     "codex:gopls-lsp@claude-plugins-official": {
       "enabled": true,
+      "desired_enabled": true,
       "registered_versions": [],
       "cached_versions": [
         "1.0.0"
-      ]
+      ],
+      "registered_scopes": []
+    },
+    "codex:jira@personal": {
+      "enabled": false,
+      "desired_enabled": false,
+      "registered_versions": [],
+      "cached_versions": [
+        "0.9.1"
+      ],
+      "registered_scopes": []
     }
   }
 }

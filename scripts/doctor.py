@@ -45,14 +45,26 @@ def inventory(home):
         base = home / f".{agent}"
         config = read_config(base / ("settings.json" if agent == "claude" else "config.toml"))
         installed = read_config(base / "plugins/installed_plugins.json").get("plugins", {})
-        for selector in manifest[agent]:
+        for selector in manifest[agent] + manifest.get("disabled", {}).get(agent, []):
             name, market = selector.rsplit("@", 1)
             cache = base / "plugins/cache" / market / name
             cached = sorted(p.name for p in cache.iterdir() if p.is_dir()) if cache.is_dir() else []
             enabled = config.get("enabledPlugins", {}).get(selector) if agent == "claude" else config.get("plugins", {}).get(selector, {}).get("enabled")
             registered = [item.get("version", "unknown") for item in installed.get(selector, [])]
-            records[f"{agent}:{selector}"] = {"enabled": bool(enabled), "registered_versions": registered, "cached_versions": cached}
+            desired_enabled = selector in manifest[agent]
+            records[f"{agent}:{selector}"] = {
+                "enabled": bool(enabled), "desired_enabled": desired_enabled,
+                "registered_versions": registered, "cached_versions": cached,
+                "registered_scopes": [{"scope": item.get("scope"), "version": item.get("version")}
+                                      for item in installed.get(selector, [])],
+            }
             print(f"{agent:6} {selector}: enabled={bool(enabled)} registered={','.join(registered) or 'unverified'} cached={','.join(cached) or 'missing'}")
+            if bool(enabled) != desired_enabled:
+                print(f"WARN {agent} {selector} differs from the desired enabled={desired_enabled} selection")
+            user_versions = {item.get("version") for item in installed.get(selector, []) if item.get("scope") == "user"}
+            for item in installed.get(selector, []):
+                if item.get("scope") != "user" and user_versions and item.get("version") not in user_versions:
+                    print(f"WARN {agent} {selector}: retained {item.get('scope')} version {item.get('version')} at {item.get('projectPath', 'unknown project')}")
         if agent == "codex" and config.get("plugins", {}).get("jira@personal", {}).get("enabled") and config.get("plugins", {}).get("jira@ai-helpers", {}).get("enabled"):
             print("WARN Codex enables two Jira plugin sources; choose one before deduplicating")
         for directory in (base / "skills", home / ".agents/skills" if agent == "codex" else base / "commands"):

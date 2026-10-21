@@ -2,17 +2,26 @@
 {{- $root := .chezmoi.workingTree -}}
 {{- $current := dict -}}
 {{- if trim .chezmoi.stdin -}}{{- $current = fromToml .chezmoi.stdin -}}{{- end -}}
+{{- if ne (get . "agentsConfigComponent" | default "all") "plugins" -}}
 {{- range $key, $value := (include (joinPath $root "config/codex.json") | fromJson) -}}
 {{- $current = setValueAtPath (list $key) $value $current -}}
+{{- end -}}
 {{- end -}}
 {{- $plugins := include (joinPath $root "plugins/manifest.json") | fromJson -}}
 {{- range $plugin := $plugins.codex -}}
 {{- $current = setValueAtPath (list "plugins" $plugin "enabled") true $current -}}
 {{- end -}}
+{{- range $plugin := $plugins.disabled.codex -}}
+{{- if hasKey (get $current "plugins" | default dict) $plugin -}}
+{{- $current = setValueAtPath (list "plugins" $plugin "enabled") false $current -}}
+{{- end -}}
+{{- end -}}
+{{- if ne (get . "agentsConfigComponent" | default "all") "plugins" -}}
 {{- $mcp := include (joinPath $root "shared/mcp.json") | fromJson -}}
 {{- range $name, $server := $mcp.servers -}}
 {{- if hasKey $server "codex" -}}
 {{- $current = setValueAtPath (list "mcp_servers" $name) $server.codex $current -}}
+{{- end -}}
 {{- end -}}
 {{- end -}}
 {{ $current | toToml }}

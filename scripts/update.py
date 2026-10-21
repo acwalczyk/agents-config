@@ -60,7 +60,7 @@ def main():
         print("Restart the agent, run doctor.sh --record, then review the changed version observations.")
     else:
         print("Plan only. No plugins or marketplace snapshots were changed.")
-    print("Bundled app plugins and jira@personal are preserved and excluded from this updater.")
+    print("Bundled app plugins and disabled legacy plugin installations are excluded from this updater.")
     print("Codex uses marketplace upgrade plus plugin add; there is no plugin-update command in CLI 0.163.0.")
 
 

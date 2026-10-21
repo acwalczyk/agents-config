@@ -12,8 +12,12 @@
     "openshift-developer@ai-helpers", "golang@ai-helpers", "gcp-hcp@gcp-hcp",
     "hcp@ai-helpers", "jira@ai-helpers", "gopls-lsp@claude-plugins-official"
   ],
+  "disabled": {
+    "claude": [],
+    "codex": ["jira@personal"]
+  },
   "preserve_native": {
-    "codex": ["jira@personal", "openai-bundled", "openai-primary-runtime"],
+    "codex": ["openai-bundled", "openai-primary-runtime"],
     "claude": ["project-scope installations", "other installed plugins"]
   }
 }

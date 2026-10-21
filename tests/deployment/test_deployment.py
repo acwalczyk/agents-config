@@ -87,7 +87,7 @@ value = 42
         self.assertIn("Read(extra/**)", claude["permissions"]["deny"])
         self.assertEqual(claude["unknown"], {"future": 1})
         self.assertTrue(claude["enabledPlugins"]["other@private"])
-        self.assertTrue(codex["plugins"]["jira@personal"]["enabled"])
+        self.assertFalse(codex["plugins"]["jira@personal"]["enabled"])
         self.assertEqual(codex["plugins"]["golang@ai-helpers"]["extra"], "preserve")
         self.assertTrue(codex["memories"]["use_memories"])
         self.assertEqual(codex["future"]["value"], 42)
@@ -107,6 +107,8 @@ value = 42
 
     def test_fresh_machine_and_restore_conflict(self):
         self.run_setup("--apply")
+        codex = tomllib.loads((self.home / ".codex/config.toml").read_text())
+        self.assertNotIn("jira@personal", codex["plugins"])
         self.assertTrue((self.home / ".t3/userdata/settings.json").exists())
         self.assertFalse((self.home / ".t3/userdata/client-settings.json").exists())
         self.assertFalse((self.home / ".claude.json").exists())
@@ -169,6 +171,27 @@ value = 42
         self.run_setup("--apply", "--component", "t3")
         self.assertEqual(list(self.home.iterdir()), [])
         self.assertFalse(self.backups.exists())
+
+    def test_plugin_component_disables_legacy_without_replacing_instructions_or_cache(self):
+        self.write(".claude/CLAUDE.md", "Existing global Claude instructions")
+        self.write(".codex/AGENTS.md", "Existing global Codex instructions")
+        self.write(".codex/config.toml", 'model = "keep-codex-model"\n[plugins."jira@personal"]\nenabled = true\n')
+        self.write(".claude/settings.json", {"model": "keep-claude-model", "permissions": {"deny": ["Read(private/**)"]}})
+        (self.repo / "shared/mcp.json").write_text(json.dumps({"servers": {"new-server": {"codex": {"command": "not-yet-selected"}}}}))
+        cache = self.write(".codex/plugins/cache/personal/jira/0.9.1/keep.txt", "rollback cache")
+        self.run_setup("--apply", "--component", "plugins")
+        value = tomllib.loads((self.home / ".codex/config.toml").read_text())
+        self.assertFalse(value["plugins"]["jira@personal"]["enabled"])
+        self.assertTrue(value["plugins"]["jira@ai-helpers"]["enabled"])
+        self.assertEqual(value["model"], "keep-codex-model")
+        self.assertNotIn("mcp_servers", value)
+        claude = json.loads((self.home / ".claude/settings.json").read_text())
+        self.assertEqual(claude["model"], "keep-claude-model")
+        self.assertEqual(claude["permissions"]["deny"], ["Read(private/**)"])
+        self.assertEqual((self.home / ".claude/CLAUDE.md").read_text(), "Existing global Claude instructions")
+        self.assertEqual((self.home / ".codex/AGENTS.md").read_text(), "Existing global Codex instructions")
+        self.assertEqual(cache.read_text(), "rollback cache")
+        self.assertFalse((self.home / ".t3").exists())
 
     def test_optional_mcp_and_t3_preserve_other_fields(self):
         (self.repo / "shared/mcp.json").write_text(json.dumps({"servers": {"demo": {

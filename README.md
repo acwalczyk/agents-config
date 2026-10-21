@@ -6,9 +6,11 @@ entry point; the existing desktop installation and its state are retained.
 
 **Status:** configuration source prepared and tested. Both Claude provider profiles
 are available and the two T3 provider entries have been applied. Full T3 chat
-verification is pending. The broad
-Claude/Codex cutover, plugin updates and retiring old setup guides remain migration
-steps. Developer workflows and costs come later. See [Claude profiles](docs/claude-profiles.md).
+verification is pending. Selected user-level team plugins have been refreshed,
+and Codex's older personal Jira plugin is disabled with its installation retained.
+Global-instruction deployment and retiring old setup guides remain migration steps.
+Developer workflows and costs come later. See [Claude profiles](docs/claude-profiles.md)
+and [plugin selection](docs/plugin-selection.md).
 
 ## Layout
 
@@ -34,9 +36,8 @@ agents-config/
 
 ## Everyday commands
 
-Requirements: Python 3.11+ and chezmoi 2.73.3+. On this machine Python is installed;
-chezmoi was tested from a checksum-verified temporary binary and is not installed
-on PATH. Install it when ready with `brew install chezmoi`. For a fresh Mac,
+Requirements: Python 3.11+ and chezmoi 2.73.3+. Both are now available on this
+machine's PATH. For another Mac, install chezmoi with `brew install chezmoi`, or
 review `tools/Brewfile` before using `brew bundle --file=tools/Brewfile`.
 
 ```sh
@@ -44,6 +45,7 @@ review `tools/Brewfile` before using `brew bundle --file=tools/Brewfile`.
 ./scripts/doctor.sh --project /path/to/repo  # Also inspect that project's skill locations
 ./scripts/setup.sh --check                  # Default: validate and preview, no native writes
 ./scripts/setup.sh --check --component t3   # Preview only T3 provider/settings changes
+./scripts/setup.sh --check --component plugins # Preview only plugin enable/disable choices
 make test                                  # Deployment tests, shell syntax, whitespace
 ./scripts/update.sh                        # Print native plugin update commands only
 ```
@@ -96,8 +98,10 @@ database and authentication. No native configuration file is symlinked into Git.
   are selected in `config/t3-providers.json`; general T3 preferences remain empty.
 
 The merge preserves parsed JSON/TOML values. Formatting and TOML comments may
-change on apply. Permission lists are additive and deselected plugins are not
-automatically disabled or uninstalled; review removals explicitly.
+change on apply. Permission lists are additive. Removing a plugin from the enabled
+selection does not uninstall or disable it; explicit `disabled` entries disable
+existing installations while preserving their files. Fresh machines do not get
+placeholder entries for legacy plugins that were never installed.
 
 Credentials, auth files, local backups, logs, chats, caches and databases stay
 outside Git. No consolidated credential `.env` is created. Read

@@ -55,3 +55,21 @@ entries were applied and a second T3-only preview is unchanged. Other inspected
 native configuration stayed unchanged. Full T3 chat remains unverified because
 computer-control permission was unavailable. See `claude-profiles.md` for exact
 test models, reported usage and the remaining manual UI check.
+
+## Plugin consolidation follow-up
+
+**Approve** the source changes against `2e55364`. The explicit disabled list is
+validated, preserves legacy installations, and avoids unresolved legacy entries
+on fresh machines. The plugin-only component changes enablement while leaving
+models, permission policies, MCP registrations and global instructions untouched.
+
+Thirteen deployment/launcher tests pass, including plugin-only scope, legacy-cache
+preservation and exact restoration. Shell syntax, Python compilation, whitespace
+checks and a native-setting comparison against the external backup pass. Native
+Claude update commands and Codex marketplace/plugin commands completed successfully.
+Codex's plugin list confirms team Jira enabled and personal Jira disabled, both
+still installed. `versions.lock.json` records refreshed versions and retained scopes.
+
+Existing sessions were not restarted, no Jira API writes were performed, and two
+older project-scoped Claude installations remain documented separately. Full T3
+chat validation remains pending.
