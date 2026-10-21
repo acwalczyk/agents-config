@@ -29,7 +29,8 @@ their global deployment is complete on this machine.
    Claude dependency repair and native checks are recorded in `plugin-selection.md`.
 3. Use the existing upstream T3 installation first if its native Claude/Codex
    providers meet the per-task selection requirement. Provider settings and auth
-   remain T3-owned; a blank `config/t3.json` makes no app changes.
+   remain native. EnMaaS now selects hosted GLM 5.3 through the native Claude client;
+   `config/t3.json` manages only its model visibility/order preferences.
 
 Model prices, routing optimization and detailed workflow design are deferred.
 These decisions do not need to be guessed to review or reuse the configuration source.

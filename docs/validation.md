@@ -190,3 +190,41 @@ Close/reopen the picker or restart T3 if it retains the old list. EnMaaS remains
 on its existing native Claude backend; whether to support every gateway model,
 including GLM, is a pending user choice. This correction changes no model defaults
 and performs no model inference.
+
+## Hosted GLM 5.3 for T3 EnMaaS
+
+**Approve** the source changes against `a9dfb34`, reviewed with the personal
+`review-code-changes` skill. The user's EnMaaS guide confirms the hosted model ID
+`rits/zai-org/glm-5-3`, Anthropic Messages compatibility and catalog limitations.
+The EnMaaS T3 entry now names GLM 5.3 with that exact ID and empty capability
+descriptors. Per-instance client preferences hide the current 13 built-in Claude
+models for EnMaaS and put GLM first. Other providers' preferences are merged intact.
+
+- A tool-free native Claude CLI probe through `bin/claude-enmaas` returned `OK`
+  with model usage keyed by `rits/zai-org/glm-5-3`, exit zero and no model error.
+  It used temporary Claude state and working directory, no tools/MCP, a custom
+  minimal system prompt, one turn, a 512-token output cap and $0.05 CLI budget.
+  Reported cost was $0.002335, a client estimate rather than verified billing.
+- `make test`: all 18 tests pass. Updated integration coverage checks custom-model
+  object preservation, provider-specific visibility/order, preservation of other
+  provider preferences and future fields, fresh deployment, empty selections and
+  exact restore with the now-populated client preferences source.
+- Python compilation, shell syntax and whitespace checks pass.
+- T3-only deployment succeeded with private backup
+  `~/.local/state/agents-config/backups/20261021T221831Z-yapmsxkn/`.
+- Post-apply preview reports both T3 files matching source. Projection of the
+  current cached catalog through saved visibility preferences leaves only GLM
+  visible for EnMaaS. All three provider identities and enablement flags remain.
+- Native comparisons show only EnMaaS custom-model metadata and its visibility/order
+  changed. Other provider models/preferences, global/native Claude and Codex
+  settings, credentials, instructions, shell files and unrelated T3 settings stayed
+  unchanged. No history database or project file was a deployment target.
+
+The GLM visibility list reflects the current catalog and needs review when T3
+adds models. No native CLI defaults, model aliases, global title model, larger
+context window or other hosted models were configured.
+
+Automatic approval review rejected T3 computer-use inspection, citing the earlier
+permission restriction and the available native validation route. No workaround
+was attempted. Visual picker confirmation and a full T3 chat remain unverified;
+the native GLM request succeeded.

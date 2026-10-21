@@ -8,16 +8,18 @@ is created. Start a new task/thread when choosing a different provider.
 ## Launch from a terminal
 
 From the repository, use `bin/claude-vertex` or `bin/claude-enmaas`, followed by
-ordinary Claude arguments. An explicit EnMaaS test-model example is:
+ordinary Claude arguments. To use GLM 5.3 through EnMaaS:
 
 ```sh
-/Users/dwalczyk/Development/agents-config/bin/claude-enmaas --model claude-sonnet-4-6
+/Users/dwalczyk/Development/agents-config/bin/claude-enmaas --model rits/zai-org/glm-5-3
 ```
 
-This is an example model choice, not a configured default. The user chose to
-leave the EnMaaS default undecided. The inherited `sonnet` alias in this Codex
-session resolves to Sonnet 4.5, which EnMaaS rejected. Select an advertised model
-explicitly until a default is chosen. No Sonnet/Opus/Haiku alias mappings were changed.
+GLM 5.3 is the selected model for the T3 EnMaaS entry. The terminal command names
+its exact gateway ID; no native model default or Sonnet/Opus/Haiku alias mapping
+was changed. Earlier Sonnet 4.6 testing was a connectivity probe. The user's
+EnMaaS guide identifies `rits/zai-org/glm-5-3` as hosted GLM and documents support
+through the Anthropic Messages endpoint used by Claude Code. It also explains
+that `/v1/models` can omit hosted models, so this supported ID is pinned locally.
 
 ## What the launchers do
 
@@ -64,8 +66,14 @@ default instance for the first time, the modifier carries forward its existing
 legacy provider configuration before applying selected fields. Other settings
 and provider entries remain intact. Moving the repository requires reapplying
 the T3 configuration.
-Sonnet 4.6 is listed as an available custom model for the EnMaaS test; no default
-model selection, title-generation provider or existing thread is changed.
+EnMaaS has one custom entry named GLM 5.3 with that exact model ID. Its capability
+descriptors are empty to avoid advertising Claude-specific reasoning, fast-mode
+or context controls. No title-generation provider or existing thread is changed.
+
+`config/t3.json` hides the 13 built-in Claude models in T3's current cached catalog
+only for `claude-enmaas` and puts GLM first. The client-settings modifier merges
+per instance, preserving other providers' preferences. This finite visibility list
+should be reviewed when T3 adds models; it is not an automatic future-model filter.
 
 Preview/apply just these T3 entries with:
 
@@ -75,15 +83,17 @@ Preview/apply just these T3 entries with:
 ```
 
 For the first T3 test, start a new local thread in an empty test project, choose
-EnMaaS and the explicit `claude-sonnet-4-6` model, and ask it to reply OK
+EnMaaS and GLM 5.3, and ask it to reply OK
 without using tools. Choose Claude on another new thread for the Vertex test.
 The terminal launchers invoke the same native Claude binary used through T3.
 
-The separate EnMaaS entry currently uses the native Claude agent and therefore
-keeps T3's Claude-driver icon and built-in model catalog. Its name does not create
-a new gateway driver, and the built-in catalog is not a verified EnMaaS inventory.
-Whether to support all gateway models, including GLM, is a separate pending user
-choice. No default model or broader model support is selected by this correction.
+The separate EnMaaS entry uses the native Claude agent as its client and retains
+that driver's icon. The model is GLM, served by EnMaaS. The built-in Claude
+catalog is hidden for this entry; Claude/Vertex and Codex keep their model lists.
+Other hosted models require their own supported IDs and capability verification.
+The guide states GLM's limits as 1,000,000 context tokens and 65,536 output tokens;
+this configuration declares no larger window and adds no model-specific limit
+override to other models.
 
 T3 Alpha 0.0.45, installed commit `6c8fed35dded`, was inspected locally. Its Claude
 driver supports custom executables and calls the Agent SDK with `extraArgs` for
@@ -101,6 +111,9 @@ On October 21, 2026:
   4.5 alias. Reported cost: $0.000837.
 - EnMaaS rejected that alias before generating tokens, then completed a tool-free
   native CLI test with explicit Sonnet 4.6. Reported cost: $0.000156.
+- Hosted GLM 5.3 completed a tool-free native CLI test through the EnMaaS launcher:
+  result `OK`, exact model usage `rits/zai-org/glm-5-3`, no CLI error. It used a
+  512-token output cap and reported $0.002335; this is a client estimate, not an invoice.
 - The smoke tests used empty temporary directories, temporary Claude state, no
   project instructions, no tools or MCP servers, and a $0.05 budget per call.
 - Full T3 chat execution remains to be verified; native CLI success alone is not
@@ -111,6 +124,13 @@ On October 21, 2026:
 - Computer-control permission was unavailable, so the T3 UI could not be used to
   perform the final chat test. Its installed server code watches external settings
   changes, but persisted entries alone do not prove successful runtime loading.
+- The GLM configuration and EnMaaS-only visibility preferences were applied with
+  a private backup. Their post-apply preview matches source; projecting the current
+  cached catalog through those preferences leaves only GLM visible for EnMaaS.
+  Other provider settings/preferences and native credentials were preserved.
+- Automatic approval review rejected a renewed T3 computer-use inspection because
+  of the earlier permission restriction. No workaround was attempted. The picker
+  appearance and full T3 chat remain unverified; native GLM inference passed.
 
 Costs above are values reported by the CLI for these tests, not verified provider
 invoices or agreed model prices. Pricing analysis remains a later task.

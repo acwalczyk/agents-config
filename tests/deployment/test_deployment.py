@@ -92,8 +92,9 @@ value = 42
         self.assertTrue(codex["memories"]["use_memories"])
         self.assertEqual(codex["future"]["value"], 42)
         self.assertEqual(codex["mcp_servers"]["native"]["env"]["SECRET_TOKEN"], CANARY)
-        for name in (".codex/auth.json", ".t3/userdata/state.sqlite", ".t3/userdata/client-settings.json"):
+        for name in (".codex/auth.json", ".t3/userdata/state.sqlite"):
             self.assertEqual(self.snapshot()[name], before[name])
+        self.assertTrue(json.loads((self.home / ".t3/userdata/client-settings.json").read_text())["futurePreference"])
         self.assertEqual(stat.S_IMODE((self.home / ".claude/settings.json").stat().st_mode), 0o600)
         self.assertEqual(stat.S_IMODE((self.home / ".codex/config.toml").stat().st_mode), 0o600)
         applied = self.snapshot()
@@ -110,7 +111,7 @@ value = 42
         codex = tomllib.loads((self.home / ".codex/config.toml").read_text())
         self.assertNotIn("jira@personal", codex["plugins"])
         self.assertTrue((self.home / ".t3/userdata/settings.json").exists())
-        self.assertFalse((self.home / ".t3/userdata/client-settings.json").exists())
+        self.assertTrue((self.home / ".t3/userdata/client-settings.json").exists())
         self.assertFalse((self.home / ".claude.json").exists())
         skill = self.home / ".codex/skills/review-code-changes/SKILL.md"
         self.assertEqual(skill.read_bytes(), (self.repo / "skills/review-code-changes/SKILL.md").read_bytes())
@@ -145,6 +146,14 @@ value = 42
         self.assertEqual(before, self.snapshot())
 
     def test_t3_component_preserves_other_instances_without_applying_other_tools(self):
+        other_preferences = {"hiddenModels": ["keep-hidden"], "modelOrder": ["keep-first"]}
+        self.write(".t3/userdata/client-settings.json", {
+            "futurePreference": CANARY,
+            "providerModelPreferences": {
+                "codex": other_preferences, "claudeAgent": other_preferences,
+                "claude-enmaas": {"hiddenModels": [], "modelOrder": [], "future": True},
+            },
+        })
         self.write(".t3/userdata/settings.json", {
             "providers": {"codex": {"enabled": True}},
             "providerInstances": {
@@ -163,11 +172,23 @@ value = 42
             item = value["providerInstances"][f"claude-{profile}"]
             self.assertEqual(item["driver"], "claudeAgent")
             self.assertEqual(item["config"]["binaryPath"], str((self.repo / f"bin/claude-{profile}").resolve()))
+        glm = value["providerInstances"]["claude-enmaas"]["config"]["customModels"]
+        self.assertEqual(glm, [{"slug": "rits/zai-org/glm-5-3", "name": "GLM 5.3",
+                                "capabilities": {"optionDescriptors": []}}])
+        client = json.loads((self.home / ".t3/userdata/client-settings.json").read_text())
+        self.assertEqual(client["futurePreference"], CANARY)
+        for instance in ("codex", "claudeAgent"):
+            self.assertEqual(client["providerModelPreferences"][instance], other_preferences)
+        enmaas = client["providerModelPreferences"]["claude-enmaas"]
+        self.assertTrue(enmaas["future"])
+        self.assertIn("claude-sonnet-4-6", enmaas["hiddenModels"])
+        self.assertEqual(enmaas["modelOrder"], [glm[0]["slug"]])
         self.assertFalse((self.home / ".claude").exists())
         self.assertFalse((self.home / ".codex").exists())
 
     def test_empty_t3_component_does_not_apply_other_configuration(self):
         (self.repo / "config/t3-providers.json").write_text("{}")
+        (self.repo / "config/t3.json").write_text("{}")
         self.run_setup("--apply", "--component", "t3")
         self.assertEqual(list(self.home.iterdir()), [])
         self.assertFalse(self.backups.exists())

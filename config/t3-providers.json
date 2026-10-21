@@ -11,7 +11,11 @@
     "enabled": true,
     "config": {
       "binaryPath": "bin/claude-enmaas",
-      "customModels": ["claude-sonnet-4-6"]
+      "customModels": [{
+        "slug": "rits/zai-org/glm-5-3",
+        "name": "GLM 5.3",
+        "capabilities": {"optionDescriptors": []}
+      }]
     }
   },
   "claude-vertex": {
