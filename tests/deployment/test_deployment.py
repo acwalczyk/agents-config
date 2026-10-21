@@ -224,6 +224,33 @@ value = 42
         self.assertIn("Plan only", result.stdout)
         self.assertFalse(sentinel.exists())
 
+    def test_claude_update_checks_loading_after_successful_install_commands(self):
+        bindir = self.base / "bin"
+        bindir.mkdir()
+        rows_file = self.base / "native-plugins.json"
+        sentinel = self.base / "checked"
+        native = bindir / "claude"
+        native.write_text(f'''#!{sys.executable}
+import pathlib, sys
+if sys.argv[1:] == ["plugin", "list", "--json"]:
+    pathlib.Path({str(sentinel)!r}).touch()
+    print(pathlib.Path({str(rows_file)!r}).read_text())
+''')
+        native.chmod(0o755)
+        selected = json.loads((self.repo / "plugins/manifest.json").read_text())["claude"]
+        rows = [{"id": name, "enabled": True} for name in selected]
+        for failed in (False, True):
+            with self.subTest(failed=failed):
+                rows[0]["errors"] = [CANARY] if failed else []
+                rows_file.write_text(json.dumps(rows))
+                result = subprocess.run([
+                    sys.executable, str(self.repo / "scripts/update.py"), "--agent", "claude", "--apply",
+                ], env={**os.environ, "HOME": str(self.home), "PATH": str(bindir)},
+                    capture_output=True, text=True, timeout=10)
+                self.assertEqual(result.returncode, 1 if failed else 0, result.stdout + result.stderr)
+                self.assertTrue(sentinel.exists())
+                self.assertNotIn(CANARY, result.stdout + result.stderr)
+
 
 if __name__ == "__main__":
     unittest.main()

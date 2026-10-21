@@ -8,6 +8,7 @@ entry point; the existing desktop installation and its state are retained.
 are available and the two T3 provider entries have been applied. Full T3 chat
 verification is pending. Selected user-level team plugins have been refreshed,
 and Codex's older personal Jira plugin is disabled with its installation retained.
+Claude's declared dependencies are installed and its native load checks pass.
 Global-instruction deployment and retiring old setup guides remain migration steps.
 Developer workflows and costs come later. See [Claude profiles](docs/claude-profiles.md)
 and [plugin selection](docs/plugin-selection.md).
@@ -43,6 +44,7 @@ review `tools/Brewfile` before using `brew bundle --file=tools/Brewfile`.
 ```sh
 ./scripts/doctor.sh                         # Local inventory; no inference or network
 ./scripts/doctor.sh --project /path/to/repo  # Also inspect that project's skill locations
+./scripts/doctor.sh --check-claude-plugins  # Native resolution check; no model calls
 ./scripts/setup.sh --check                  # Default: validate and preview, no native writes
 ./scripts/setup.sh --check --component t3   # Preview only T3 provider/settings changes
 ./scripts/setup.sh --check --component plugins # Preview only plugin enable/disable choices
@@ -69,7 +71,7 @@ Update a selected agent's team plugins separately:
 ```sh
 ./scripts/update.sh --agent claude --apply
 ./scripts/update.sh --agent codex --apply
-./scripts/doctor.sh --record
+./scripts/doctor.sh --check-claude-plugins --record
 ```
 
 Native installers may download or run plugin installation hooks and can prompt.
@@ -77,6 +79,11 @@ The updater does not accept arbitrary hooks automatically. Operations stop at
 the first failure; previous successful updates remain applied. Restart sessions
 after updates. Review and commit the new observations in `versions.lock.json`.
 No automatic background updater has been enabled.
+Claude updates also check native plugin resolution before reporting success.
+The explicit doctor check exits nonzero if a selected plugin is absent, disabled,
+has load errors, or the native check cannot run. It uses `--project` when supplied;
+otherwise it checks from this repository. Ordinary doctor inventory remains separate.
+These checks inspect plugin metadata; they do not start MCP/LSP servers or invoke skills.
 
 ## Ownership
 

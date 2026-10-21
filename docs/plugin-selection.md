@@ -72,21 +72,78 @@ Git changes were unchanged. A private backup is under
 The general updater still deliberately operates at user scope; project updates
 remain explicit. No project declarations were removed or committed to gcp-hcp.
 
-## Remaining native dependency errors
+## Resolved Claude dependency errors
 
-A fresh `claude plugin list --json` reports these load errors independently of
-the two successfully updated project plugins:
+After the project refresh, a fresh `claude plugin list --json` reported these
+additional load errors:
 
-- `golang@ai-helpers` requires `gopls-lsp@ai-helpers`. The currently installed
+- `golang@ai-helpers` required `gopls-lsp@ai-helpers`. The installed
   `gopls-lsp@claude-plugins-official` does not satisfy that qualified dependency.
-- `openshift-developer@ai-helpers` reports `ci@ai-helpers` unsatisfied. CI 0.0.80
-  is installed but disabled; its cached presence alone does not satisfy loading.
+- `openshift-developer@ai-helpers` reported `ci@ai-helpers` unsatisfied. CI 0.0.80
+  was installed but disabled; its cached presence alone did not satisfy loading.
 
-These dependency selections have not been changed in this step. An enabled flag
-and successful update are insufficient to establish that a plugin loads correctly.
-The current doctor inventory records flags and registrations, but does not yet
-check native dependency-resolution errors. Resolve dependencies and recheck the
-native list before treating the overall plugin setup as complete.
+Inspection of the bundle manifest found further dependencies behind the first
+reported error. The Claude selection now includes the full declared set:
+
+| Dependency | Installed version | Action |
+| --- | --- | --- |
+| gopls-lsp@ai-helpers | 1.0.0 | Installed and enabled |
+| ci@ai-helpers | 0.0.106 | Updated from 0.0.80 and enabled |
+| prodsec-skills@ai-helpers | 1.0.0 | Installed and enabled |
+| git@ai-helpers | 0.0.7 | Installed and enabled |
+| code-review@ai-helpers | 0.0.18 | Installed and enabled |
+
+Jira and Go already satisfied the bundle's other dependencies. Codex's selection
+was unchanged. The [Claude dependency reference](https://code.claude.com/docs/en/plugins/dependencies)
+explains that unqualified dependencies resolve within their declaring marketplace.
+
+An isolated native installation exposed an upstream catalog limitation: the
+team's `gopls-lsp` entry references Anthropic's repository but does not carry the
+official marketplace's inline `lspServers` definition. `plugin details` reports
+zero LSP servers for that entry. Keep `gopls-lsp@claude-plugins-official` enabled
+alongside it: the team entry satisfies the dependency identity, while the official
+entry still exposes one `gopls` language server. No cached plugin files were patched.
+The upstream entries can be inspected in the
+[team catalog](https://github.com/openshift-eng/ai-helpers/blob/main/.claude-plugin/marketplace.json)
+and [official catalog](https://github.com/anthropics/claude-plugins-official/blob/main/.claude-plugin/marketplace.json).
+
+Fresh native lists from agents-config and gcp-hcp report no load errors. Component
+inventories resolve Go's skills/MCP/hook, the OpenShift skills/hook, the official
+Go LSP, and 130 Product Security skills. This checks metadata and dependency
+resolution, not live MCP/LSP startup or the behavior of each skill.
+
+The existing OpenShift SessionStart hook becomes usable with the repaired bundle:
+in repositories with `.pre-commit-config.yaml`, it validates that configuration
+and installs pre-commit/pre-push Git hooks. No interactive agent session or that
+hook was started during this repair.
+
+Native installation backup:
+`~/.local/state/agents-config/backups/20261021T213812Z-dependencies-_9scihi8/`.
+Chezmoi plugin-enablement backup:
+`~/.local/state/agents-config/backups/20261021T213854Z-bj2_mnfh/`.
+Fingerprints confirm non-plugin Claude settings, Codex configuration/authentication,
+T3 settings, shell files, global instructions, project skills/settings/instructions
+and existing project Git changes were preserved.
+
+## Native checks for future updates
+
+An enabled flag and successful update are insufficient to establish that a plugin
+resolves correctly. The Claude path in `scripts/update.sh` now checks `plugin list --json` after
+successful installation commands and fails if any selected plugin is missing,
+disabled, reports load errors, or the check cannot run. Unselected plugin failures
+are outside this selected-configuration check.
+
+Run the same check explicitly in a project:
+
+```sh
+./scripts/doctor.sh --check-claude-plugins --record --project /path/to/repo
+```
+
+Without the explicit check flag, doctor remains an inventory of settings, cache
+and registrations. The native check captures command output and reports only
+selected IDs and status, suppressing raw native errors. It makes no inference
+or MCP requests. Recording adds the check result to the version observations;
+an unsuccessful or unavailable native check exits nonzero.
 
 ## Reload and verify
 

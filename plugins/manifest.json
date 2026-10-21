@@ -5,8 +5,10 @@
     "claude-plugins-official": "https://github.com/anthropics/claude-plugins-official.git"
   },
   "claude": [
-    "openshift-developer@ai-helpers", "golang@ai-helpers", "gcp-hcp@gcp-hcp",
-    "hcp@ai-helpers", "jira@ai-helpers", "gopls-lsp@claude-plugins-official"
+    "gopls-lsp@claude-plugins-official", "gopls-lsp@ai-helpers",
+    "ci@ai-helpers", "prodsec-skills@ai-helpers", "git@ai-helpers",
+    "code-review@ai-helpers", "jira@ai-helpers", "golang@ai-helpers",
+    "openshift-developer@ai-helpers", "gcp-hcp@gcp-hcp", "hcp@ai-helpers"
   ],
   "codex": [
     "openshift-developer@ai-helpers", "golang@ai-helpers", "gcp-hcp@gcp-hcp",

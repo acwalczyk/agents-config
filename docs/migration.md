@@ -13,8 +13,9 @@ The initial real-home preview reports only two content changes: generated global
 Claude and Codex instructions. Selected settings and the personal skill already
 match the current files. Private-directory/file modes can also be enforced on apply.
 At the initial commit, no live configuration, plugins, credentials or shell files
-had been changed. Subsequently, only the two selected T3 provider instances were
-applied. See `claude-profiles.md` for the live probe results and remaining UI check.
+had been changed. Subsequent T3 provider deployment, plugin updates and dependency
+repair are documented in `claude-profiles.md` and `plugin-selection.md`; global
+instruction deployment remains pending.
 
 ## 2. Resolve cutover decisions
 
@@ -23,7 +24,8 @@ applied. See `claude-profiles.md` for the live probe results and remaining UI ch
    unchanged while the named profiles and T3 instances are verified.
 2. Jira selection is resolved: keep `jira@ai-helpers` and disable `jira@personal`
    in Codex, retaining the old installation. User-level plugin refresh is complete;
-   older project-scoped Claude installations are recorded in `plugin-selection.md`.
+   project-scoped Jira and GCP HCP registrations now match the user versions.
+   Claude dependency repair and native checks are recorded in `plugin-selection.md`.
 3. Use the existing upstream T3 installation first if its native Claude/Codex
    providers meet the per-task selection requirement. Provider settings and auth
    remain T3-owned; a blank `config/t3.json` makes no app changes.
@@ -56,8 +58,8 @@ installs to the user and leaves project installations and app-bundled plugins al
 Plugin commands are not configuration deployment and may update native registration.
 The update plan does not verify that remote catalogs are current until it is executed.
 
-Re-run `doctor.sh --record`, inspect the version changes, restart sessions and
-explicitly invoke a known relevant skill in the actual project. Check both tools;
+Re-run `doctor.sh --check-claude-plugins --record`, inspect the version changes,
+restart sessions and explicitly invoke a known relevant skill in the actual project. Check both tools;
 a cached version directory is not proof that the host loaded it. Native provider
 login and any sample inference are separate verification steps, not part of the tests.
 

@@ -94,3 +94,35 @@ reports unsatisfied `gopls-lsp@ai-helpers` and `ci@ai-helpers` dependencies for 
 and OpenShift Developer respectively. The earlier successful update checks did
 not check native load errors. Those dependency choices remain a separate next
 step. No model calls or Jira requests were made during this follow-up.
+
+## Claude dependency repair and native-check follow-up
+
+**Approve** the source changes against `70d335f`, reviewed with the existing
+personal `review-code-changes` skill. No blocking findings remain. The Claude
+selection includes all declared bundle dependencies; the updater verifies native
+resolution after successful native update/install commands. Doctor exposes the
+same check explicitly, records its status when requested and exits nonzero for
+missing/disabled/broken plugins or an unavailable check. Raw native output is
+captured and suppressed. Codex's selection and configuration are unchanged.
+
+- `make test`: all 17 tests pass. Added cases exercise errors hidden behind enabled
+  flags, missing/disabled plugins, unavailable/malformed native output, output
+  redaction, selected scope, and update-command success followed by load failure.
+- `python3 -m compileall -q scripts tests/deployment`: passes.
+- Shell syntax and staged/unstaged whitespace checks pass.
+- Native doctor failed before repair and passes afterward in gcp-hcp. Fresh native
+  lists from both agents-config and gcp-hcp report no plugin load errors.
+- Component checks show Go/OpenShift skills and hooks, Go's MCP server and the
+  official Go language server. The team Go dependency entry exposes zero LSP
+  servers, so the official entry remains enabled alongside it.
+- `setup.sh --check --component plugins`: both native setting files match source.
+- Private backup comparisons confirm all non-plugin Claude settings, Codex
+  settings/authentication, T3 settings, shell files, global instructions, project
+  skills/settings/instructions and existing project Git changes were preserved.
+- Known native credential values are absent from tracked and pending source files.
+
+Native installation/enablement was separately authorized and performed through
+native plugin commands and the chezmoi wrapper. No model inference, Jira requests,
+interactive-session startup or plugin hook execution was needed for these checks.
+Live MCP/LSP server startup and each skill's behavior remain outside this metadata
+verification. Full T3 chat and global-instruction deployment remain pending.

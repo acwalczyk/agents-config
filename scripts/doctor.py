@@ -4,6 +4,7 @@
 import argparse
 from datetime import datetime, timezone
 import json
+import os
 from pathlib import Path
 import plistlib
 import shutil
@@ -11,6 +12,36 @@ import subprocess
 import tomllib
 
 from manage import ROOT, load_json, validate_source
+
+
+def check_claude_plugins(home, project):
+    selected = load_json(ROOT / "plugins/manifest.json")["claude"]
+    try:
+        result = subprocess.run(
+            ["claude", "plugin", "list", "--json"], cwd=project,
+            env={**os.environ, "CLAUDE_CONFIG_DIR": str(home / ".claude")},
+            capture_output=True, text=True, timeout=30,
+        )
+        if result.returncode:
+            raise ValueError()
+        plugins = json.loads(result.stdout)
+        if not isinstance(plugins, list) or any(not isinstance(p, dict) for p in plugins):
+            raise ValueError()
+    except (OSError, subprocess.TimeoutExpired, ValueError):
+        print("WARN native Claude plugin check unavailable; command output suppressed")
+        return {"status": "unverified"}
+    checks = {}
+    for selector in selected:
+        entries = [p for p in plugins if p.get("id") == selector]
+        errors = any(p.get("errors") or p.get("errorDetails") for p in entries)
+        enabled = bool(entries) and all(p.get("enabled") is True for p in entries)
+        status = "ok" if enabled and not errors else "failed"
+        checks[selector] = {"status": status}
+        print(f"NATIVE Claude {selector}: {status}")
+    return {
+        "status": "ok" if all(p["status"] == "ok" for p in checks.values()) else "failed",
+        "project": str(project), "selected_plugins": checks,
+    }
 
 
 def version(command):
@@ -94,7 +125,11 @@ def main():
     parser.add_argument("--home", type=Path, default=Path.home())
     parser.add_argument("--project", type=Path, help="inspect one project, without recursive repository scans")
     parser.add_argument("--record", action="store_true", help="write observed versions.lock.json to this repository")
+    parser.add_argument("--check-claude-plugins", action="store_true", help="check native Claude plugin resolution; no inference or MCP calls")
     args = parser.parse_args()
+    project = args.project.expanduser().resolve() if args.project else ROOT
+    if not project.is_dir():
+        parser.error("--project must name an existing directory")
     validate_source()
     versions = {name: version(name) for name in ("claude", "codex", "chezmoi", "uv", "gh", "python3")}
     t3 = Path("/Applications/T3 Code (Alpha).app/Contents/Info.plist")
@@ -105,8 +140,8 @@ def main():
     for name, value in versions.items():
         print(f"TOOL {name}: {value}")
     records = inventory(args.home.expanduser())
+    native_check = check_claude_plugins(args.home.expanduser().resolve(), project) if args.check_claude_plugins else None
     if args.project:
-        project = args.project.expanduser().resolve()
         for relative in ("AGENTS.md", "CLAUDE.md", ".agents/skills", ".claude/skills"):
             path = project / relative
             print(f"PROJECT {relative}: {'present' if path.exists() else 'absent'}")
@@ -120,9 +155,12 @@ def main():
             "deployment_tested_with": {"chezmoi": "2.73.3", "minimum_python": "3.11"},
             "tools": versions, "selected_plugins": records,
         }
+        if native_check is not None:
+            record["native_claude_plugin_check"] = native_check
         (ROOT / "versions.lock.json").write_text(json.dumps(record, indent=2) + "\n")
         print("Wrote versions.lock.json. Review and commit it if desired.")
+    return 1 if native_check is not None and native_check["status"] != "ok" else 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

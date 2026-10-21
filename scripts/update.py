@@ -11,6 +11,7 @@ import sys
 import tomllib
 
 from manage import ROOT, load_json, validate_source
+from doctor import check_claude_plugins
 
 
 def commands(agent):
@@ -56,6 +57,8 @@ def main():
                 result = subprocess.run(command, cwd=ROOT)
                 if result.returncode:
                     sys.exit("Native update stopped. Earlier operations may have succeeded; inspect before retrying.")
+            if agent == "claude" and check_claude_plugins(Path.home(), ROOT)["status"] != "ok":
+                sys.exit("Native updates finished, but Claude plugin resolution failed or is unverified. Inspect with doctor.sh --check-claude-plugins.")
     if args.apply:
         print("Restart the agent, run doctor.sh --record, then review the changed version observations.")
     else:
