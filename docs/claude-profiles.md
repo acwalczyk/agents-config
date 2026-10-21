@@ -43,16 +43,27 @@ and [CLI settings overrides](https://code.claude.com/docs/en/cli-reference).
 
 ## T3
 
-`config/t3-providers.json` declares two native Claude provider instances:
+The desired T3 picker has three active provider entries:
 
 | Instance | Driver | Executable |
 | --- | --- | --- |
-| Claude · Vertex | Claude Code Agent SDK | Repository `bin/claude-vertex` |
-| Claude · EnMaaS | Claude Code Agent SDK | Repository `bin/claude-enmaas` |
+| OpenAI / Codex | Existing native Codex provider | Existing configuration |
+| Claude | Claude Code Agent SDK | Repository `bin/claude-vertex` |
+| EnMaaS | Claude Code Agent SDK | Repository `bin/claude-enmaas` |
+
+The Claude entry uses T3's existing `claudeAgent` instance ID. T3 automatically
+creates this default instance when it has no explicit entry; adding two new named
+Claude instances without consolidating it produced four picker entries. The extra
+`claude-vertex` instance is now explicitly disabled and retained for history
+references. `claude-enmaas` keeps its ID and is displayed as `EnMaaS`.
+Imported threads and authentication are not removed or reimported.
 
 Chezmoi expands executable paths relative to this repository and merges those
-instances into `~/.t3/userdata/settings.json`. Other settings and provider entries
-remain intact. Moving the repository requires reapplying the T3 configuration.
+instances into `~/.t3/userdata/settings.json`. When explicitly configuring the
+default instance for the first time, the modifier carries forward its existing
+legacy provider configuration before applying selected fields. Other settings
+and provider entries remain intact. Moving the repository requires reapplying
+the T3 configuration.
 Sonnet 4.6 is listed as an available custom model for the EnMaaS test; no default
 model selection, title-generation provider or existing thread is changed.
 
@@ -64,9 +75,15 @@ Preview/apply just these T3 entries with:
 ```
 
 For the first T3 test, start a new local thread in an empty test project, choose
-Claude · EnMaaS and the explicit `claude-sonnet-4-6` model, and ask it to reply OK
-without using tools. Choose Claude · Vertex on another new thread for its test.
+EnMaaS and the explicit `claude-sonnet-4-6` model, and ask it to reply OK
+without using tools. Choose Claude on another new thread for the Vertex test.
 The terminal launchers invoke the same native Claude binary used through T3.
+
+The separate EnMaaS entry currently uses the native Claude agent and therefore
+keeps T3's Claude-driver icon and built-in model catalog. Its name does not create
+a new gateway driver, and the built-in catalog is not a verified EnMaaS inventory.
+Whether to support all gateway models, including GLM, is a separate pending user
+choice. No default model or broader model support is selected by this correction.
 
 T3 Alpha 0.0.45, installed commit `6c8fed35dded`, was inspected locally. Its Claude
 driver supports custom executables and calls the Agent SDK with `extraArgs` for

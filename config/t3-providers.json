@@ -1,17 +1,23 @@
 {
-  "claude-vertex": {
+  "claudeAgent": {
     "driver": "claudeAgent",
-    "displayName": "Claude · Vertex",
+    "displayName": "Claude",
     "enabled": true,
     "config": {"binaryPath": "bin/claude-vertex"}
   },
   "claude-enmaas": {
     "driver": "claudeAgent",
-    "displayName": "Claude · EnMaaS",
+    "displayName": "EnMaaS",
     "enabled": true,
     "config": {
       "binaryPath": "bin/claude-enmaas",
       "customModels": ["claude-sonnet-4-6"]
     }
+  },
+  "claude-vertex": {
+    "driver": "claudeAgent",
+    "displayName": "Claude · Vertex",
+    "enabled": false,
+    "config": {"binaryPath": "bin/claude-vertex"}
   }
 }

@@ -157,3 +157,36 @@ remain pending.
 
 OpenAI Docs was used to check Codex discovery and refresh behavior against the
 [official AGENTS.md documentation](https://learn.chatgpt.com/docs/agent-configuration/agents-md).
+
+## T3 provider-count correction
+
+**Approve** the source changes against `f1d3109`, reviewed with the personal
+`review-code-changes` skill. The screenshots showed a default Claude entry plus
+the two named instances, giving four active entries with Codex. Installed T3's
+registry hydration code confirms that it synthesizes the built-in default unless
+an explicit entry uses that driver's ID.
+
+The corrected source reuses `claudeAgent` for Claude through Vertex, labels
+`claude-enmaas` as EnMaaS and disables the extra `claude-vertex` entry. The modifier
+carries existing legacy configuration into the default instance without aliasing
+or mutating it. The legacy in-config enabled flag is omitted so it cannot veto
+the selected envelope flag. Imported history and authentication remain app-owned.
+
+- `make test`: all 18 tests pass, including legacy home/model/launch-argument
+  preservation, explicit enablement over an old disabled flag, duplicate disablement,
+  untouched history data, repeat application and other deployment safeguards.
+- Python compilation, shell syntax and whitespace checks pass.
+- T3-only deployment succeeded with private backup
+  `~/.local/state/agents-config/backups/20261021T215748Z-3o5xjcni/`.
+- Post-apply preview matches source. Applying the installed registry's default
+  hydration/enablement rules to the saved settings resolves exactly Codex, Claude
+  and EnMaaS as active; the extra named Vertex instance is disabled.
+- Native comparison confirms EnMaaS routing/models, other providers, unrelated
+  T3 server/client settings, authentication, Claude/Codex configuration, global
+  instructions and shell files were preserved. History databases were not targets.
+
+The rendered picker after correction and full T3 chat execution remain unverified.
+Close/reopen the picker or restart T3 if it retains the old list. EnMaaS remains
+on its existing native Claude backend; whether to support every gateway model,
+including GLM, is a pending user choice. This correction changes no model defaults
+and performs no model inference.

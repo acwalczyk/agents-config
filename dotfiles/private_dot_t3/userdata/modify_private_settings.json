@@ -3,6 +3,10 @@
 {{- if trim .chezmoi.stdin -}}{{- $current = fromJson .chezmoi.stdin -}}{{- end -}}
 {{- $root := .chezmoi.workingTree -}}
 {{- range $id, $instance := (include (joinPath $root "config/t3-providers.json") | fromJson) -}}
+{{- if and (eq $id $instance.driver) (not (hasKey (get $current "providerInstances" | default dict) $id)) -}}
+{{- $legacy := get (get $current "providers" | default dict) $id | default dict -}}
+{{- $current = setValueAtPath (list "providerInstances" $id "config") (omit (deepCopy $legacy) "enabled") $current -}}
+{{- end -}}
 {{- range $key, $value := $instance -}}
 {{- if eq $key "config" -}}
 {{- range $setting, $value := $value -}}

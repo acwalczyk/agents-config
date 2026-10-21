@@ -172,6 +172,38 @@ value = 42
         self.assertEqual(list(self.home.iterdir()), [])
         self.assertFalse(self.backups.exists())
 
+    def test_t3_reuses_default_claude_and_preserves_imported_configuration(self):
+        self.write(".t3/userdata/settings.json", {
+            "providers": {
+                "codex": {"enabled": True, "homePath": "keep-codex-home"},
+                "claudeAgent": {"enabled": False, "homePath": "keep-claude-home",
+                                "launchArgs": "--keep", "customModels": ["keep-model"]},
+            },
+            "providerInstances": {"claude-vertex": {"driver": "claudeAgent", "enabled": True}},
+        })
+        history = self.write(".t3/userdata/state.sqlite", "imported history placeholder")
+        self.run_setup("--apply", "--component", "t3")
+        value = json.loads((self.home / ".t3/userdata/settings.json").read_text())
+        instances = value["providerInstances"]
+        claude = instances["claudeAgent"]
+        self.assertEqual(claude["displayName"], "Claude")
+        self.assertTrue(claude["enabled"])
+        self.assertNotIn("enabled", claude["config"])
+        self.assertEqual(claude["config"]["homePath"], "keep-claude-home")
+        self.assertEqual(claude["config"]["launchArgs"], "--keep")
+        self.assertEqual(claude["config"]["customModels"], ["keep-model"])
+        self.assertEqual(claude["config"]["binaryPath"], str((self.repo / "bin/claude-vertex").resolve()))
+        self.assertEqual(value["providers"]["codex"]["homePath"], "keep-codex-home")
+        self.assertNotIn("binaryPath", value["providers"]["claudeAgent"])
+        self.assertFalse(value["providers"]["claudeAgent"]["enabled"])
+        self.assertEqual(instances["claude-enmaas"]["displayName"], "EnMaaS")
+        self.assertTrue(instances["claude-enmaas"]["enabled"])
+        self.assertFalse(instances["claude-vertex"]["enabled"])
+        self.assertEqual(history.read_text(), "imported history placeholder")
+        before = self.snapshot()
+        self.run_setup("--apply", "--component", "t3")
+        self.assertEqual(self.snapshot(), before)
+
     def test_plugin_component_disables_legacy_without_replacing_instructions_or_cache(self):
         self.write(".claude/CLAUDE.md", "Existing global Claude instructions")
         self.write(".codex/AGENTS.md", "Existing global Codex instructions")

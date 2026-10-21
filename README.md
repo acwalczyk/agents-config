@@ -5,7 +5,8 @@ Claude Code and Codex. Choose an agent for each task. T3 is the proposed shared
 entry point; the existing desktop installation and its state are retained.
 
 **Status:** configuration source prepared and tested. Both Claude provider profiles
-are available and the two T3 provider entries have been applied. Full T3 chat
+are available and T3 is configured for OpenAI/Codex, Claude (Vertex), and EnMaaS,
+with the extra named Vertex instance disabled. Full T3 chat
 verification is pending. Selected user-level team plugins have been refreshed,
 and Codex's older personal Jira plugin is disabled with its installation retained.
 Claude's declared dependencies are installed and its native load checks pass.
