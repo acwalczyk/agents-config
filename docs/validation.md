@@ -1,5 +1,8 @@
 # Initial repository review — October 21, 2026
 
+Each section records validation at that step; later sections supersede earlier
+deployment limits.
+
 **Approve** for the prepared configuration source: no blocking findings remain
 in the initial diff. This does not certify live provider connectivity or complete
 the application cutover.
@@ -126,3 +129,31 @@ native plugin commands and the chezmoi wrapper. No model inference, Jira request
 interactive-session startup or plugin hook execution was needed for these checks.
 Live MCP/LSP server startup and each skill's behavior remain outside this metadata
 verification. Full T3 chat and global-instruction deployment remain pending.
+
+## Approved global-instruction deployment
+
+The user reviewed `instructions/common.md`, `instructions/claude.md` and
+`instructions/codex.md` and approved them. No instruction source content changed
+during deployment. The supported chezmoi wrapper deployed the rendered files to
+`~/.claude/CLAUDE.md` and `~/.codex/AGENTS.md`, with a private backup at
+`~/.local/state/agents-config/backups/20261021T214932Z-ktigk2c2/`.
+
+- Pre-apply preview identified only those two instruction content changes.
+- Post-apply preview reports all six managed files matching source.
+- Both generated files contain the managed header, full approved shared text and
+  the corresponding agent-specific text.
+- Fingerprints confirm native settings/authentication, plugin registrations,
+  personal skill, T3 settings, shell files, source instructions, project
+  instructions/skills/settings and existing project Git changes stayed unchanged.
+- Codex uses the expected home, has no global `AGENTS.override.md`, and surfaced
+  the approved global instructions in this chat after deployment.
+
+This step changes deployment records only; the existing deployment implementation
+and instruction source were unchanged. Whitespace validation passes. The 17 tests
+passed in the preceding implementation step and were not rerun for this deployment
+record. No dedicated model probe or Jira request was made. A new Claude session
+will pick up its global file; the full T3 chat check and old-guide/helper retirement
+remain pending.
+
+OpenAI Docs was used to check Codex discovery and refresh behavior against the
+[official AGENTS.md documentation](https://learn.chatgpt.com/docs/agent-configuration/agents-md).

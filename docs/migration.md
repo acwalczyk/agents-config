@@ -14,8 +14,9 @@ Claude and Codex instructions. Selected settings and the personal skill already
 match the current files. Private-directory/file modes can also be enforced on apply.
 At the initial commit, no live configuration, plugins, credentials or shell files
 had been changed. Subsequent T3 provider deployment, plugin updates and dependency
-repair are documented in `claude-profiles.md` and `plugin-selection.md`; global
-instruction deployment remains pending.
+repair are documented in `claude-profiles.md` and `plugin-selection.md`. The user
+subsequently reviewed and approved the shared and agent-specific instructions;
+their global deployment is complete on this machine.
 
 ## 2. Resolve cutover decisions
 
@@ -33,11 +34,19 @@ instruction deployment remains pending.
 Model prices, routing optimization and detailed workflow design are deferred.
 These decisions do not need to be guessed to review or reuse the configuration source.
 
-## 3. Apply selected configuration
+## 3. Apply selected configuration — completed on this machine
 
-Install chezmoi when ready. Review source configuration and instructions, close
-the affected agent sessions, run `scripts/setup.sh --check`, then
-`scripts/setup.sh --apply`. The wrapper uses isolated chezmoi config/state/cache,
+The approved instructions were deployed through `scripts/setup.sh --apply` to
+`~/.claude/CLAUDE.md` and `~/.codex/AGENTS.md`. The preview showed only these two
+content changes. Post-apply preview reports all managed files matching source;
+fingerprints confirm other settings, credentials, skills, shell files and project
+work were preserved. The private backup is
+`~/.local/state/agents-config/backups/20261021T214932Z-ktigk2c2/`.
+Codex surfaced the new instruction contents in the current chat after deployment.
+
+For another machine or a later approved change, review source configuration and
+instructions, close the affected agent sessions, run `scripts/setup.sh --check`,
+then `scripts/setup.sh --apply`. The wrapper uses isolated chezmoi config/state/cache,
 so it does not take over another personal dotfiles repository.
 
 Backups go under `~/.local/state/agents-config/backups/` with private directories

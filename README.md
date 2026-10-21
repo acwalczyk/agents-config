@@ -9,7 +9,8 @@ are available and the two T3 provider entries have been applied. Full T3 chat
 verification is pending. Selected user-level team plugins have been refreshed,
 and Codex's older personal Jira plugin is disabled with its installation retained.
 Claude's declared dependencies are installed and its native load checks pass.
-Global-instruction deployment and retiring old setup guides remain migration steps.
+The approved shared/agent instructions are deployed globally to Claude and Codex.
+Retiring old setup guides remains a migration step.
 Developer workflows and costs come later. See [Claude profiles](docs/claude-profiles.md)
 and [plugin selection](docs/plugin-selection.md).
 
