@@ -107,7 +107,8 @@ value = 42
 
     def test_fresh_machine_and_restore_conflict(self):
         self.run_setup("--apply")
-        self.assertFalse((self.home / ".t3").exists())
+        self.assertTrue((self.home / ".t3/userdata/settings.json").exists())
+        self.assertFalse((self.home / ".t3/userdata/client-settings.json").exists())
         self.assertFalse((self.home / ".claude.json").exists())
         skill = self.home / ".codex/skills/review-code-changes/SKILL.md"
         self.assertEqual(skill.read_bytes(), (self.repo / "skills/review-code-changes/SKILL.md").read_bytes())
@@ -140,6 +141,34 @@ value = 42
         before = self.snapshot()
         self.run_setup("--apply", success=False)
         self.assertEqual(before, self.snapshot())
+
+    def test_t3_component_preserves_other_instances_without_applying_other_tools(self):
+        self.write(".t3/userdata/settings.json", {
+            "providers": {"codex": {"enabled": True}},
+            "providerInstances": {
+                "existing": {"driver": "codex", "displayName": "Keep"},
+                "claude-vertex": {"driver": "claudeAgent", "config": {"customModels": ["keep"]}},
+            },
+            "futureSetting": {"secret": CANARY},
+        })
+        self.run_setup("--apply", "--component", "t3")
+        value = json.loads((self.home / ".t3/userdata/settings.json").read_text())
+        self.assertTrue(value["providers"]["codex"]["enabled"])
+        self.assertEqual(value["providerInstances"]["existing"]["displayName"], "Keep")
+        self.assertEqual(value["providerInstances"]["claude-vertex"]["config"]["customModels"], ["keep"])
+        self.assertEqual(value["futureSetting"]["secret"], CANARY)
+        for profile in ("vertex", "enmaas"):
+            item = value["providerInstances"][f"claude-{profile}"]
+            self.assertEqual(item["driver"], "claudeAgent")
+            self.assertEqual(item["config"]["binaryPath"], str((self.repo / f"bin/claude-{profile}").resolve()))
+        self.assertFalse((self.home / ".claude").exists())
+        self.assertFalse((self.home / ".codex").exists())
+
+    def test_empty_t3_component_does_not_apply_other_configuration(self):
+        (self.repo / "config/t3-providers.json").write_text("{}")
+        self.run_setup("--apply", "--component", "t3")
+        self.assertEqual(list(self.home.iterdir()), [])
+        self.assertFalse(self.backups.exists())
 
     def test_optional_mcp_and_t3_preserve_other_fields(self):
         (self.repo / "shared/mcp.json").write_text(json.dumps({"servers": {"demo": {

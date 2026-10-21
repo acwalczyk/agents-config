@@ -1,6 +1,9 @@
 {{- $root := .chezmoi.workingTree -}}
 {{- if not (include (joinPath $root "config/t3.json") | fromJson) }}
-.t3/**
+.t3/userdata/client-settings.json
+{{- end }}
+{{- if not (include (joinPath $root "config/t3-providers.json") | fromJson) }}
+.t3/userdata/settings.json
 {{- end }}
 {{- $mcp := include (joinPath $root "shared/mcp.json") | fromJson -}}
 {{- $claude := false -}}

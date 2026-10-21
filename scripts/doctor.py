@@ -60,6 +60,11 @@ def inventory(home):
                 entries = sorted(p.name for p in directory.iterdir() if not p.name.startswith("."))
                 print(f"DISCOVERY {directory}: {', '.join(entries) or 'empty'}")
     claude = read_config(home / ".claude/settings.json")
+    t3 = read_config(home / ".t3/userdata/settings.json")
+    for instance_id in load_json(ROOT / "config/t3-providers.json"):
+        instance = t3.get("providerInstances", {}).get(instance_id)
+        binary = Path(instance.get("config", {}).get("binaryPath", "")) if instance else None
+        print(f"T3 {instance_id}: configured={instance is not None} launcher_present={bool(binary and binary.is_file())}")
     vertex = home / ".config/claude-code-vertex/env.sh"
     if claude.get("env", {}).get("ANTHROPIC_BASE_URL") and vertex.exists() and "CLAUDE_CODE_USE_VERTEX=1" in vertex.read_text():
         print("WARN Claude has a settings endpoint plus a Vertex shell loader; effective routing requires verification")

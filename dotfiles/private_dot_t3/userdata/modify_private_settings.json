@@ -1,0 +1,17 @@
+{{- /* chezmoi:modify-template */ -}}
+{{- $current := dict -}}
+{{- if trim .chezmoi.stdin -}}{{- $current = fromJson .chezmoi.stdin -}}{{- end -}}
+{{- $root := .chezmoi.workingTree -}}
+{{- range $id, $instance := (include (joinPath $root "config/t3-providers.json") | fromJson) -}}
+{{- range $key, $value := $instance -}}
+{{- if eq $key "config" -}}
+{{- range $setting, $value := $value -}}
+{{- if eq $setting "binaryPath" -}}{{- $value = joinPath $root $value -}}{{- end -}}
+{{- $current = setValueAtPath (list "providerInstances" $id "config" $setting) $value $current -}}
+{{- end -}}
+{{- else -}}
+{{- $current = setValueAtPath (list "providerInstances" $id $key) $value $current -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{ $current | toPrettyJson }}

@@ -29,6 +29,8 @@ def targets():
     ]
     if load_json(ROOT / "config/t3.json"):
         files.append(".t3/userdata/client-settings.json")
+    if load_json(ROOT / "config/t3-providers.json"):
+        files.append(".t3/userdata/settings.json")
     if any("claude" in server for server in load_json(ROOT / "shared/mcp.json")["servers"].values()):
         files.append(".claude.json")
     return files
@@ -83,12 +85,21 @@ def validate_source():
         for plugin in plugins[agent]:
             if "@" not in plugin or plugin.rsplit("@", 1)[1] not in plugins["marketplaces"]:
                 raise ValueError(f"Unknown marketplace in {agent} selection")
+    for profile in ("vertex", "enmaas"):
+        value = load_json(ROOT / f"profiles/claude/{profile}.json")
+        if not isinstance(value.get("env"), dict) or not all(isinstance(v, str) for v in value["env"].values()):
+            raise ValueError(f"Invalid {profile} environment")
+    for instance in load_json(ROOT / "config/t3-providers.json").values():
+        binary = (ROOT / instance["config"]["binaryPath"]).resolve()
+        if not binary.is_relative_to(ROOT / "bin") or not binary.is_file():
+            raise ValueError("T3 provider binary must be a repository profile launcher")
     tomllib.loads((ROOT / "shared/providers.toml").read_text())
 
 
 class Deployment:
-    def __init__(self, destination, workspace):
+    def __init__(self, destination, workspace, component="all"):
         self.destination = destination
+        self.selected_targets = [name for name in targets() if component == "all" or name.startswith(".t3/")]
         binary = os.environ.get("CHEZMOI") or shutil.which("chezmoi")
         if not binary:
             raise ValueError("chezmoi missing; install with brew install chezmoi, then retry")
@@ -113,7 +124,7 @@ class Deployment:
         managed = set(self.run("managed", "--include", "files").decode().splitlines())
         if managed != set(targets()):
             raise ValueError("Chezmoi file selection differs from the deployment allowlist")
-        for relative in targets():
+        for relative in self.selected_targets:
             path = safe_path(self.destination, relative)
             before[relative] = contents(path)
             data = before[relative]
@@ -152,6 +163,9 @@ def private_write(path, data, mode=0o600):
 
 
 def apply(deployment, before, after, backup_root):
+    if not before:
+        print("No configuration targets selected. Nothing applied.")
+        return
     if backup_root.is_relative_to(ROOT):
         raise ValueError("Backups must be outside the source repository")
     backup_root.mkdir(parents=True, exist_ok=True, mode=0o700)
@@ -173,7 +187,7 @@ def apply(deployment, before, after, backup_root):
     manifest_path = backup / "manifest.json"
     private_write(manifest_path, json.dumps(manifest, indent=2).encode())
     try:
-        deployment.run("--force", "apply")
+        deployment.run("--force", "apply", "--parent-dirs", *[str(deployment.destination / name) for name in before])
         for relative, expected in after.items():
             actual = contents(deployment.destination / relative)
             if parsed(relative, actual) != parsed(relative, expected):
@@ -190,7 +204,7 @@ def restore(backup, destination):
     manifest = load_json(backup / "manifest.json")
     if manifest["destination"] != str(destination):
         raise ValueError("Backup destination does not match --destination")
-    allowed = set(targets()) | {".claude.json", ".t3/userdata/client-settings.json"}
+    allowed = set(targets()) | {".claude.json", ".t3/userdata/client-settings.json", ".t3/userdata/settings.json"}
     for relative, record in manifest["files"].items():
         if relative not in allowed:
             raise ValueError("Unexpected path in backup manifest")
@@ -216,6 +230,7 @@ def main():
     modes.add_argument("--restore", type=Path, metavar="BACKUP", help="restore if files have not changed since apply")
     parser.add_argument("--destination", type=Path, default=Path.home())
     parser.add_argument("--backup-root", type=Path, default=Path.home() / ".local/state/agents-config/backups")
+    parser.add_argument("--component", choices=("all", "t3"), default="all", help="limit preview/apply to one component")
     args = parser.parse_args()
     destination = args.destination.expanduser().resolve()
     try:
@@ -224,7 +239,7 @@ def main():
             restore(args.restore.expanduser().resolve(), destination)
             return
         with tempfile.TemporaryDirectory(prefix="agents-config-") as work:
-            deployment = Deployment(destination, Path(work))
+            deployment = Deployment(destination, Path(work), args.component)
             before, after = deployment.preview()
             if args.apply:
                 apply(deployment, before, after, args.backup_root.expanduser().resolve())

@@ -4,9 +4,11 @@ Versioned configuration for a local AI development environment using native
 Claude Code and Codex. Choose an agent for each task. T3 is the proposed shared
 entry point; the existing desktop installation and its state are retained.
 
-**Status:** initial configuration source prepared and tested. Nothing has been
-applied to the live applications. Provider routing, plugin updates and retiring
-old setup guides are still migration steps. Developer workflows and costs come later.
+**Status:** configuration source prepared and tested. Both Claude provider profiles
+are available and the two T3 provider entries have been applied. Full T3 chat
+verification is pending. The broad
+Claude/Codex cutover, plugin updates and retiring old setup guides remain migration
+steps. Developer workflows and costs come later. See [Claude profiles](docs/claude-profiles.md).
 
 ## Layout
 
@@ -15,8 +17,10 @@ agents-config/
 ├── AGENTS.md                  # Instructions for maintaining this repository
 ├── instructions/              # Common personal rules + Claude/Codex additions
 ├── config/                    # Selected non-secret native settings
+├── profiles/claude/           # Explicit Vertex and EnMaaS routing overlays
+├── bin/                       # Native Claude launchers for terminal and T3
 ├── shared/
-│   ├── providers.toml         # Observed providers; no routing switch yet
+│   ├── providers.toml         # Provider profile selection and local auth locations
 │   └── mcp.json               # Explicit custom MCP registrations by host
 ├── dotfiles/                  # Chezmoi native-path templates and selective modifiers
 ├── plugins/manifest.json      # Selected team plugins and marketplace sources
@@ -39,6 +43,7 @@ review `tools/Brewfile` before using `brew bundle --file=tools/Brewfile`.
 ./scripts/doctor.sh                         # Local inventory; no inference or network
 ./scripts/doctor.sh --project /path/to/repo  # Also inspect that project's skill locations
 ./scripts/setup.sh --check                  # Default: validate and preview, no native writes
+./scripts/setup.sh --check --component t3   # Preview only T3 provider/settings changes
 make test                                  # Deployment tests, shell syntax, whitespace
 ./scripts/update.sh                        # Print native plugin update commands only
 ```
@@ -87,7 +92,8 @@ database and authentication. No native configuration file is symlinked into Git.
 - The existing personal `review-code-changes` skill is copied unchanged and
   deployed to its current Codex location. Divergence blocks deployment.
 - T3 settings and Claude's top-level `.claude.json` are ignored unless their
-  optional source definitions are populated. No T3 preference is selected yet.
+  optional source definitions are populated. Two named Claude provider instances
+  are selected in `config/t3-providers.json`; general T3 preferences remain empty.
 
 The merge preserves parsed JSON/TOML values. Formatting and TOML comments may
 change on apply. Permission lists are additive and deselected plugins are not

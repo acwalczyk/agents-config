@@ -12,12 +12,15 @@
 The initial real-home preview reports only two content changes: generated global
 Claude and Codex instructions. Selected settings and the personal skill already
 match the current files. Private-directory/file modes can also be enforced on apply.
-No live configuration, plugins, credentials or shell files have been changed.
+At the initial commit, no live configuration, plugins, credentials or shell files
+had been changed. Subsequently, only the two selected T3 provider instances were
+applied. See `claude-profiles.md` for the live probe results and remaining UI check.
 
 ## 2. Resolve cutover decisions
 
-1. Choose Claude's intended provider: Vertex, EnMaaS, or deliberate separate launch
-   profiles. Existing shell and settings conflict; do not infer intent from `sonnet`.
+1. Claude provider choice is resolved: keep both with explicit per-task launch
+   profiles. See `claude-profiles.md`. Existing shell/default settings remain
+   unchanged while the named profiles and T3 instances are verified.
 2. Decide whether to keep the older personal Jira plugin alongside the team plugin.
 3. Use the existing upstream T3 installation first if its native Claude/Codex
    providers meet the per-task selection requirement. Provider settings and auth

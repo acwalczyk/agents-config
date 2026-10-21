@@ -1,0 +1,14 @@
+{
+  "env": {
+    "CLAUDE_CODE_USE_VERTEX": "",
+    "CLAUDE_CODE_USE_BEDROCK": "",
+    "CLAUDE_CODE_USE_FOUNDRY": "",
+    "CLAUDE_CODE_USE_ANTHROPIC_AWS": "",
+    "ANTHROPIC_VERTEX_PROJECT_ID": "",
+    "CLOUD_ML_REGION": "",
+    "ANTHROPIC_BASE_URL": "https://enmaas.example.invalid",
+    "ANTHROPIC_AUTH_TOKEN": "",
+    "CLAUDE_CODE_OAUTH_TOKEN": "",
+    "CLAUDE_CODE_ENABLE_GATEWAY_MODEL_DISCOVERY": "1"
+  }
+}

@@ -1,16 +1,19 @@
-# Inventory, not routing configuration. No environment exports are deployed yet.
-# Resolve the Claude shell/settings conflict before changing authentication.
+# Profile selection metadata. Routing overlays live in profiles/claude/*.json.
+# Existing native settings and shell exports are retained during staged testing.
 
-[claude_settings]
-endpoint = "https://enmaas.example.invalid"
-credential_location = "native Claude settings; value deliberately excluded"
-model_alias = "sonnet"
+[claude]
+selection = "explicit per-task profiles"
+shared_native_config = "~/.claude"
 
-[claude_shell]
-vertex_enabled = true
-region = "global"
-project = "example-vertex-project"
-source = "~/.config/claude-code-vertex/env.sh"
+[claude.profiles.vertex]
+settings = "profiles/claude/vertex.json"
+launcher = "bin/claude-vertex"
+authentication = "existing Google Application Default Credentials"
+
+[claude.profiles.enmaas]
+settings = "profiles/claude/enmaas.json"
+launcher = "bin/claude-enmaas"
+authentication = "existing native Claude ANTHROPIC_API_KEY; never copied to Git"
 
 [codex]
 authentication = "native API key authentication"

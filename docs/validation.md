@@ -41,3 +41,17 @@ sample inference, T3 provider compatibility and actual remote plugin updates rem
 unverified. The tests cover configuration handling with synthetic fixtures, not
 every plugin's behavior. Configuration restore is file-based and cannot roll back
 plugin binaries, sessions or remote actions. Follow `migration.md` for cutover.
+
+## Provider-profile follow-up
+
+**Approve** the source changes against initial commit `ec8f075`: 12 deployment
+and launcher tests pass, including T3-only scope, empty-selection handling,
+SDK-settings merging, stdin/stdout preservation, cancellation cleanup, unchanged
+model defaults and credential isolation. Shell syntax, Python compilation and
+staged whitespace checks pass. Known native credential values are absent from source.
+
+Both named launchers completed minimal live CLI inference. T3's two provider
+entries were applied and a second T3-only preview is unchanged. Other inspected
+native configuration stayed unchanged. Full T3 chat remains unverified because
+computer-control permission was unavailable. See `claude-profiles.md` for exact
+test models, reported usage and the remaining manual UI check.

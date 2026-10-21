@@ -1,0 +1,99 @@
+# Claude provider profiles
+
+Selected arrangement: keep both Vertex and EnMaaS and choose explicitly per task.
+Both profiles use the existing native Claude configuration directory, plugins,
+instructions and local state. No alternate account directory or credential copy
+is created. Start a new task/thread when choosing a different provider.
+
+## Launch from a terminal
+
+From the repository, use `bin/claude-vertex` or `bin/claude-enmaas`, followed by
+ordinary Claude arguments. An explicit EnMaaS test-model example is:
+
+```sh
+/Users/dwalczyk/Development/agents-config/bin/claude-enmaas --model claude-sonnet-4-6
+```
+
+This is an example model choice, not a configured default. The user chose to
+leave the EnMaaS default undecided. The inherited `sonnet` alias in this Codex
+session resolves to Sonnet 4.5, which EnMaaS rejected. Select an advertised model
+explicitly until a default is chosen. No Sonnet/Opus/Haiku alias mappings were changed.
+
+## What the launchers do
+
+1. Read the selected non-secret overlay in `profiles/claude/`.
+2. Merge any `--settings` files/JSON supplied by the caller, including T3's SDK.
+3. Apply provider-routing overrides last in both process environment and settings.
+4. Run the installed native `claude` executable, preserving stdin/stdout and
+   forwarding cancellation signals. Remove the private temporary overlay on exit.
+
+Vertex sets its existing GCP project and global region and clears gateway URL,
+Anthropic credentials and other provider selectors for that process. Google
+Application Default Credentials remain local and are used normally.
+
+EnMaaS clears the cloud-provider selectors, sets the gateway endpoint, and reuses
+the existing native `ANTHROPIC_API_KEY`. The key is omitted from the profile file.
+The original user settings and shell startup files are unchanged. Plain `claude`
+therefore retains its old behavior; use a named launcher for predictable routing.
+
+Settings files override shell values in normal Claude sessions. Clearing a stale
+selector requires an empty string in the overlay, not simply omitting the key.
+See [Anthropic environment precedence](https://code.claude.com/docs/en/env-vars)
+and [CLI settings overrides](https://code.claude.com/docs/en/cli-reference).
+
+## T3
+
+`config/t3-providers.json` declares two native Claude provider instances:
+
+| Instance | Driver | Executable |
+| --- | --- | --- |
+| Claude · Vertex | Claude Code Agent SDK | Repository `bin/claude-vertex` |
+| Claude · EnMaaS | Claude Code Agent SDK | Repository `bin/claude-enmaas` |
+
+Chezmoi expands executable paths relative to this repository and merges those
+instances into `~/.t3/userdata/settings.json`. Other settings and provider entries
+remain intact. Moving the repository requires reapplying the T3 configuration.
+Sonnet 4.6 is listed as an available custom model for the EnMaaS test; no default
+model selection, title-generation provider or existing thread is changed.
+
+Preview/apply just these T3 entries with:
+
+```sh
+./scripts/setup.sh --check --component t3
+./scripts/setup.sh --apply --component t3
+```
+
+For the first T3 test, start a new local thread in an empty test project, choose
+Claude · EnMaaS and the explicit `claude-sonnet-4-6` model, and ask it to reply OK
+without using tools. Choose Claude · Vertex on another new thread for its test.
+The terminal launchers invoke the same native Claude binary used through T3.
+
+T3 Alpha 0.0.45, installed commit `6c8fed35dded`, was inspected locally. Its Claude
+driver supports custom executables and calls the Agent SDK with `extraArgs` for
+chat. Its helper text generation has another launch path. Using the named binary
+wrappers applies the routing overlay in both paths and preserves SDK settings.
+This is why the setup does not rely solely on T3's launch-arguments field.
+See the upstream [Claude provider documentation](https://github.com/pingdotgg/t3code/blob/main/docs/user/providers-claude.md).
+
+## Verification
+
+On October 21, 2026:
+
+- EnMaaS `/v1/models` returned HTTP 200 using the existing native credential.
+- Vertex completed a tool-free native CLI smoke test using its inherited Sonnet
+  4.5 alias. Reported cost: $0.000837.
+- EnMaaS rejected that alias before generating tokens, then completed a tool-free
+  native CLI test with explicit Sonnet 4.6. Reported cost: $0.000156.
+- The smoke tests used empty temporary directories, temporary Claude state, no
+  project instructions, no tools or MCP servers, and a $0.05 budget per call.
+- Full T3 chat execution remains to be verified; native CLI success alone is not
+  proof that the entire T3 conversation flow succeeds.
+- The T3-only configuration was applied with a private external snapshot. Both
+  provider entries and executable paths are present in native settings. Fingerprints
+  confirm that Claude/Codex configuration and shell startup stayed unchanged.
+- Computer-control permission was unavailable, so the T3 UI could not be used to
+  perform the final chat test. Its installed server code watches external settings
+  changes, but persisted entries alone do not prove successful runtime loading.
+
+Costs above are values reported by the CLI for these tests, not verified provider
+invoices or agreed model prices. Pricing analysis remains a later task.
