@@ -1,0 +1,22 @@
+# Inventory, not routing configuration. No environment exports are deployed yet.
+# Resolve the Claude shell/settings conflict before changing authentication.
+
+[claude_settings]
+endpoint = "https://enmaas.example.invalid"
+credential_location = "native Claude settings; value deliberately excluded"
+model_alias = "sonnet"
+
+[claude_shell]
+vertex_enabled = true
+region = "global"
+project = "example-vertex-project"
+source = "~/.config/claude-code-vertex/env.sh"
+
+[codex]
+authentication = "native API key authentication"
+credential_location = "~/.codex/auth.json"
+model = "gpt-6.1-sol"
+
+[opencode_legacy]
+endpoint = "http://localhost:4000/v1"
+status = "inactive in daily workflow; retain until separately retired"

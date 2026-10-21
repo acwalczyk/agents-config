@@ -1,0 +1,177 @@
+import json
+import os
+from pathlib import Path
+import shutil
+import stat
+import subprocess
+import sys
+import tempfile
+import tomllib
+import unittest
+
+ROOT = Path(__file__).resolve().parents[2]
+CHEZMOI = os.environ.get("CHEZMOI") or shutil.which("chezmoi")
+CANARY = "CANARY_NOT_A_REAL_KEY_DO_NOT_PRINT"
+
+
+class DeploymentTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        if not CHEZMOI:
+            raise RuntimeError("Real chezmoi is required; set CHEZMOI=/path/to/chezmoi")
+
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory(prefix="agents-config-test-")
+        self.base = Path(self.temporary.name)
+        self.repo = self.base / "source"
+        shutil.copytree(ROOT, self.repo, ignore=shutil.ignore_patterns(".git", "__pycache__"))
+        self.home = self.base / "home"
+        self.home.mkdir()
+        self.backups = self.base / "backups"
+
+    def tearDown(self):
+        self.temporary.cleanup()
+
+    def write(self, relative, data):
+        path = self.home / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(data if isinstance(data, str) else json.dumps(data))
+        return path
+
+    def run_setup(self, *args, success=True):
+        result = subprocess.run([
+            sys.executable, str(self.repo / "scripts/manage.py"),
+            "--destination", str(self.home), "--backup-root", str(self.backups), *args,
+        ], env={**os.environ, "CHEZMOI": str(CHEZMOI)}, capture_output=True, text=True, timeout=30)
+        self.assertEqual(result.returncode == 0, success, result.stdout + result.stderr)
+        self.assertNotIn(CANARY, result.stdout + result.stderr)
+        return result
+
+    def snapshot(self):
+        return {str(p.relative_to(self.home)): (p.read_bytes(), stat.S_IMODE(p.stat().st_mode)) for p in self.home.rglob("*") if p.is_file()}
+
+    def test_selective_apply_preserves_native_state_idempotent_and_restorable(self):
+        self.write(".claude/settings.json", {
+            "model": "old", "env": {"ANTHROPIC_API_KEY": CANARY},
+            "permissions": {"allow": ["Read(src/**)"], "deny": ["Read(extra/**)"]},
+            "enabledPlugins": {"other@private": True}, "unknown": {"future": 1},
+        })
+        self.write(".codex/config.toml", f'''model = "old"
+[memories]
+use_memories = true
+[mcp_servers.native]
+command = "native-server"
+[mcp_servers.native.env]
+SECRET_TOKEN = "{CANARY}"
+[plugins."jira@personal"]
+enabled = true
+[plugins."golang@ai-helpers"]
+enabled = false
+extra = "preserve"
+[future]
+value = 42
+''')
+        self.write(".codex/auth.json", {"OPENAI_API_KEY": CANARY})
+        self.write(".t3/userdata/client-settings.json", {"futurePreference": True})
+        self.write(".t3/userdata/state.sqlite", "native database placeholder")
+        self.write(".codex/AGENTS.md", "")
+        before = self.snapshot()
+        self.run_setup("--check")
+        self.assertEqual(before, self.snapshot())
+        self.assertFalse(self.backups.exists())
+        self.run_setup("--apply")
+        claude = json.loads((self.home / ".claude/settings.json").read_text())
+        codex = tomllib.loads((self.home / ".codex/config.toml").read_text())
+        self.assertEqual(claude["env"]["ANTHROPIC_API_KEY"], CANARY)
+        self.assertEqual(claude["permissions"]["allow"], ["Read(src/**)"])
+        self.assertIn("Read(extra/**)", claude["permissions"]["deny"])
+        self.assertEqual(claude["unknown"], {"future": 1})
+        self.assertTrue(claude["enabledPlugins"]["other@private"])
+        self.assertTrue(codex["plugins"]["jira@personal"]["enabled"])
+        self.assertEqual(codex["plugins"]["golang@ai-helpers"]["extra"], "preserve")
+        self.assertTrue(codex["memories"]["use_memories"])
+        self.assertEqual(codex["future"]["value"], 42)
+        self.assertEqual(codex["mcp_servers"]["native"]["env"]["SECRET_TOKEN"], CANARY)
+        for name in (".codex/auth.json", ".t3/userdata/state.sqlite", ".t3/userdata/client-settings.json"):
+            self.assertEqual(self.snapshot()[name], before[name])
+        self.assertEqual(stat.S_IMODE((self.home / ".claude/settings.json").stat().st_mode), 0o600)
+        self.assertEqual(stat.S_IMODE((self.home / ".codex/config.toml").stat().st_mode), 0o600)
+        applied = self.snapshot()
+        self.run_setup("--apply")
+        self.assertEqual(self.snapshot(), applied)
+        first = sorted(self.backups.iterdir(), key=lambda p: p.stat().st_mtime_ns)[0]
+        self.assertEqual(stat.S_IMODE(first.stat().st_mode), 0o700)
+        self.assertEqual(stat.S_IMODE((first / ".claude/settings.json").stat().st_mode), 0o600)
+        self.run_setup("--restore", str(first))
+        self.assertEqual(self.snapshot(), before)
+
+    def test_fresh_machine_and_restore_conflict(self):
+        self.run_setup("--apply")
+        self.assertFalse((self.home / ".t3").exists())
+        self.assertFalse((self.home / ".claude.json").exists())
+        skill = self.home / ".codex/skills/review-code-changes/SKILL.md"
+        self.assertEqual(skill.read_bytes(), (self.repo / "skills/review-code-changes/SKILL.md").read_bytes())
+        backup = next(self.backups.iterdir())
+        self.write(".codex/AGENTS.md", "appended local instruction")
+        state = self.snapshot()
+        self.run_setup("--restore", str(backup), success=False)
+        self.assertEqual(self.snapshot(), state)
+
+    def test_invalid_native_file_fails_without_leaking_or_writing(self):
+        for relative, data in (
+            (".claude/settings.json", '{"secret": "' + CANARY),
+            (".codex/config.toml", 'secret = "' + CANARY),
+        ):
+            with self.subTest(relative=relative):
+                self.write(relative, data)
+                before = self.snapshot()
+                self.run_setup("--apply", success=False)
+                self.assertEqual(before, self.snapshot())
+                (self.home / relative).unlink()
+
+    def test_symlinks_and_unported_instructions_fail_closed(self):
+        external = self.base / "external"
+        external.mkdir()
+        (self.home / ".claude").symlink_to(external, target_is_directory=True)
+        self.run_setup("--apply", success=False)
+        self.assertEqual(list(external.iterdir()), [])
+        (self.home / ".claude").unlink()
+        self.write(".claude/CLAUDE.md", "Existing important instructions")
+        before = self.snapshot()
+        self.run_setup("--apply", success=False)
+        self.assertEqual(before, self.snapshot())
+
+    def test_optional_mcp_and_t3_preserve_other_fields(self):
+        (self.repo / "shared/mcp.json").write_text(json.dumps({"servers": {"demo": {
+            "claude": {"command": "demo-server", "args": ["--stdio"]},
+            "codex": {"command": "demo-server", "args": ["--stdio"]},
+        }}}))
+        (self.repo / "config/t3.json").write_text('{"terminalLinksRequireModifierClick": true}')
+        self.write(".claude.json", {"projects": {"keep": True}, "mcpServers": {"native": {"command": "existing"}}})
+        self.write(".t3/userdata/client-settings.json", {"other": "keep"})
+        self.run_setup("--apply")
+        claude = json.loads((self.home / ".claude.json").read_text())
+        codex = tomllib.loads((self.home / ".codex/config.toml").read_text())
+        self.assertEqual(claude["projects"], {"keep": True})
+        self.assertEqual(claude["mcpServers"]["native"]["command"], "existing")
+        self.assertEqual(claude["mcpServers"]["demo"], codex["mcp_servers"]["demo"])
+        self.assertEqual(json.loads((self.home / ".t3/userdata/client-settings.json").read_text()), {"other": "keep", "terminalLinksRequireModifierClick": True})
+
+    def test_update_is_a_plan_by_default_and_never_runs_agents(self):
+        bindir = self.base / "bin"
+        bindir.mkdir()
+        sentinel = self.base / "executed"
+        for agent in ("claude", "codex"):
+            path = bindir / agent
+            path.write_text(f'#!/bin/sh\ntouch "{sentinel}"\nexit 1\n')
+            path.chmod(0o755)
+        result = subprocess.run([sys.executable, str(self.repo / "scripts/update.py")],
+                                env={**os.environ, "HOME": str(self.home), "PATH": str(bindir)},
+                                capture_output=True, text=True, timeout=10)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("Plan only", result.stdout)
+        self.assertFalse(sentinel.exists())
+
+
+if __name__ == "__main__":
+    unittest.main()

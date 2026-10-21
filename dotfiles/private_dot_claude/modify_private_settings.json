@@ -1,0 +1,20 @@
+{{- /* chezmoi:modify-template */ -}}
+{{- $root := .chezmoi.workingTree -}}
+{{- $current := dict -}}
+{{- if trim .chezmoi.stdin -}}{{- $current = fromJson .chezmoi.stdin -}}{{- end -}}
+{{- $config := include (joinPath $root "config/claude.json") | fromJson -}}
+{{- range $key, $value := $config -}}
+{{- if eq $key "permissions" -}}
+{{- range $kind, $rules := $value -}}
+{{- $existing := get (get $current "permissions" | default dict) $kind | default list -}}
+{{- $current = setValueAtPath (list "permissions" $kind) (concat $existing $rules | uniq) $current -}}
+{{- end -}}
+{{- else -}}
+{{- $current = setValueAtPath (list $key) $value $current -}}
+{{- end -}}
+{{- end -}}
+{{- $plugins := include (joinPath $root "plugins/manifest.json") | fromJson -}}
+{{- range $plugin := $plugins.claude -}}
+{{- $current = setValueAtPath (list "enabledPlugins" $plugin) true $current -}}
+{{- end -}}
+{{ $current | toPrettyJson }}

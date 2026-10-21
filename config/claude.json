@@ -1,0 +1,15 @@
+{
+  "model": "sonnet",
+  "effortLevel": "high",
+  "alwaysThinkingEnabled": true,
+  "permissions": {
+    "deny": [
+      "Bash(rm -rf *)", "Bash(rm -fr *)", "Bash(sudo *)",
+      "Bash(git reset --hard*)", "Bash(dd *)", "Bash(mkfs *)",
+      "Bash(wget *| bash*)", "Bash(wget *|bash*)", "Edit(~/.ssh/**)",
+      "Read(~/.ssh/id_*)", "Read(~/.kube/**)", "Read(~/.config/gh/**)",
+      "Read(~/.gnupg/private-keys-v1.d/**)", "Read(~/Library/Keychains/**)"
+    ],
+    "ask": ["Bash(git push *)"]
+  }
+}

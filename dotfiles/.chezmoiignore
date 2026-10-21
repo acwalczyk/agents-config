@@ -1,0 +1,12 @@
+{{- $root := .chezmoi.workingTree -}}
+{{- if not (include (joinPath $root "config/t3.json") | fromJson) }}
+.t3/**
+{{- end }}
+{{- $mcp := include (joinPath $root "shared/mcp.json") | fromJson -}}
+{{- $claude := false -}}
+{{- range $name, $server := $mcp.servers -}}
+{{- if hasKey $server "claude" -}}{{- $claude = true -}}{{- end -}}
+{{- end -}}
+{{- if not $claude }}
+.claude.json
+{{- end }}

@@ -1,0 +1,8 @@
+# Explicit dependency installation: brew bundle --file=tools/Brewfile
+# Homebrew installs current versions; versions.lock.json is an observation, not a pin.
+brew "chezmoi"
+brew "python@3.14"
+brew "gh"
+cask "claude-code"
+cask "codex"
+# Keep the existing T3 desktop installation; no fork or replacement is selected.

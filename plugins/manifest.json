@@ -1,0 +1,19 @@
+{
+  "marketplaces": {
+    "ai-helpers": "https://github.com/openshift-eng/ai-helpers.git",
+    "gcp-hcp": "https://github.com/openshift-online/gcp-hcp.git",
+    "claude-plugins-official": "https://github.com/anthropics/claude-plugins-official.git"
+  },
+  "claude": [
+    "openshift-developer@ai-helpers", "golang@ai-helpers", "gcp-hcp@gcp-hcp",
+    "hcp@ai-helpers", "jira@ai-helpers", "gopls-lsp@claude-plugins-official"
+  ],
+  "codex": [
+    "openshift-developer@ai-helpers", "golang@ai-helpers", "gcp-hcp@gcp-hcp",
+    "hcp@ai-helpers", "jira@ai-helpers", "gopls-lsp@claude-plugins-official"
+  ],
+  "preserve_native": {
+    "codex": ["jira@personal", "openai-bundled", "openai-primary-runtime"],
+    "claude": ["project-scope installations", "other installed plugins"]
+  }
+}

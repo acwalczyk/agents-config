@@ -1,0 +1,7 @@
+{{- /* chezmoi:modify-template */ -}}
+{{- $current := dict -}}
+{{- if trim .chezmoi.stdin -}}{{- $current = fromJson .chezmoi.stdin -}}{{- end -}}
+{{- range $key, $value := (include (joinPath .chezmoi.workingTree "config/t3.json") | fromJson) -}}
+{{- $current = setValueAtPath (list $key) $value $current -}}
+{{- end -}}
+{{ $current | toPrettyJson }}

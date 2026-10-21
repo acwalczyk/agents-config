@@ -1,0 +1,10 @@
+{{- /* chezmoi:modify-template */ -}}
+{{- $current := dict -}}
+{{- if trim .chezmoi.stdin -}}{{- $current = fromJson .chezmoi.stdin -}}{{- end -}}
+{{- $mcp := include (joinPath .chezmoi.workingTree "shared/mcp.json") | fromJson -}}
+{{- range $name, $server := $mcp.servers -}}
+{{- if hasKey $server "claude" -}}
+{{- $current = setValueAtPath (list "mcpServers" $name) $server.claude $current -}}
+{{- end -}}
+{{- end -}}
+{{ $current | toPrettyJson }}
