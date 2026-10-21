@@ -73,3 +73,24 @@ still installed. `versions.lock.json` records refreshed versions and retained sc
 Existing sessions were not restarted, no Jira API writes were performed, and two
 older project-scoped Claude installations remain documented separately. Full T3
 chat validation remains pending.
+
+## Project-plugin refresh follow-up
+
+Both explicit native project-scope updates succeeded in gcp-hcp: Jira 0.9.1 to
+0.9.6 and GCP HCP 0.0.4 to 0.0.6. Fresh `claude plugin list --json` confirms
+matching user/project versions and no load errors on those two plugins. Before
+the updates, `plugin details` already resolved the current versions; the retained
+older registrations were not proof of stale loading in those fresh commands.
+
+Native registry comparison shows only those two plugin selectors changed. Private
+backup fingerprints confirm native user settings and project settings, skills,
+instructions, Git status and staged/unstaged diffs were preserved. Doctor records
+the aligned registrations and no longer warns about these older project versions.
+This follow-up changes documentation and observed inventory only; no implementation
+or deployment behavior changed.
+
+**Validation incomplete** for the broader plugin setup: the native Claude list
+reports unsatisfied `gopls-lsp@ai-helpers` and `ci@ai-helpers` dependencies for Go
+and OpenShift Developer respectively. The earlier successful update checks did
+not check native load errors. Those dependency choices remain a separate next
+step. No model calls or Jira requests were made during this follow-up.

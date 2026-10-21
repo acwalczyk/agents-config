@@ -48,20 +48,45 @@ desired enablement and observed cache/registration evidence in `versions.lock.js
 The latest inventory also finds Homebrew's chezmoi 2.73.3 on PATH; this update did
 not install it. The initial audit's missing-binary finding is historical.
 
-## Retained project-scoped installations
+## Project-scoped installations
 
-Claude still has older project-scoped installations for
-`/Users/dwalczyk/Development/HCP/gcp-hcp`:
+The older Claude registrations for `/Users/dwalczyk/Development/HCP/gcp-hcp`
+have now been updated explicitly at project scope:
 
-| Plugin | Retained project version | Refreshed user version |
-| --- | --- | --- |
-| jira@ai-helpers | 0.9.1 | 0.9.6 |
-| gcp-hcp@gcp-hcp | 0.0.4 | 0.0.6 |
+| Plugin | Project before | Project after | User version |
+| --- | --- | --- | --- |
+| jira@ai-helpers | 0.9.1 | 0.9.6 | 0.9.6 |
+| gcp-hcp@gcp-hcp | 0.0.4 | 0.0.6 | 0.0.6 |
 
-The updater deliberately operates at user scope. These project installations
-were preserved rather than silently migrated; verify their effective scope before
-assuming a new project session uses the user-level version. `doctor.sh` reports
-the older project registrations and their paths.
+Before this update, fresh `claude plugin details` commands from that repository
+already resolved Jira 0.9.6 and GCP HCP 0.0.6. The old project records therefore
+did not establish that those commands loaded stale content. Project enablement
+has precedence over user enablement, but that is distinct from selecting a cached
+version; see the [Claude loading reference](https://code.claude.com/docs/en/plugins/loading).
+
+Both native `claude plugin update <id> --scope project --json` operations succeeded.
+Only these two selectors changed in the native installation registry. Fingerprints
+confirmed that user settings, repository settings, instructions, skills and existing
+Git changes were unchanged. A private backup is under
+`~/.local/state/agents-config/backups/20261021T213112Z-project-plugins-es94t4gw/`.
+The general updater still deliberately operates at user scope; project updates
+remain explicit. No project declarations were removed or committed to gcp-hcp.
+
+## Remaining native dependency errors
+
+A fresh `claude plugin list --json` reports these load errors independently of
+the two successfully updated project plugins:
+
+- `golang@ai-helpers` requires `gopls-lsp@ai-helpers`. The currently installed
+  `gopls-lsp@claude-plugins-official` does not satisfy that qualified dependency.
+- `openshift-developer@ai-helpers` reports `ci@ai-helpers` unsatisfied. CI 0.0.80
+  is installed but disabled; its cached presence alone does not satisfy loading.
+
+These dependency selections have not been changed in this step. An enabled flag
+and successful update are insufficient to establish that a plugin loads correctly.
+The current doctor inventory records flags and registrations, but does not yet
+check native dependency-resolution errors. Resolve dependencies and recheck the
+native list before treating the overall plugin setup as complete.
 
 ## Reload and verify
 

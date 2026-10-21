@@ -1,5 +1,5 @@
 {
-  "observed_at": "2026-10-21T21:15:11.747938+00:00",
+  "observed_at": "2026-10-21T21:31:39.884851+00:00",
   "kind": "observations; not a binary/plugin resolution lock",
   "deployment_tested_with": {
     "chezmoi": "2.73.3",
@@ -54,7 +54,7 @@
       "desired_enabled": true,
       "registered_versions": [
         "0.0.6",
-        "0.0.4"
+        "0.0.6"
       ],
       "cached_versions": [
         "0.0.4",
@@ -67,7 +67,7 @@
         },
         {
           "scope": "project",
-          "version": "0.0.4"
+          "version": "0.0.6"
         }
       ]
     },
@@ -93,7 +93,7 @@
       "desired_enabled": true,
       "registered_versions": [
         "0.9.6",
-        "0.9.1"
+        "0.9.6"
       ],
       "cached_versions": [
         "0.9.1",
@@ -106,7 +106,7 @@
         },
         {
           "scope": "project",
-          "version": "0.9.1"
+          "version": "0.9.6"
         }
       ]
     },
