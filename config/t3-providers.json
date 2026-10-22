@@ -7,16 +7,26 @@
   },
   "claude-enmaas": {
     "driver": "claudeAgent",
-    "displayName": "EnMaaS",
+    "displayName": "Claude via EnMaaS",
     "enabled": true,
     "config": {
       "binaryPath": "bin/claude-enmaas",
       "customModels": [{
         "slug": "rits/zai-org/glm-5-3",
-        "name": "GLM 5.3",
+        "name": "GLM 5.3 (EnMaaS)",
+        "capabilities": {"optionDescriptors": []}
+      }, {
+        "slug": "rits/deepseek-ai/DeepSeek-V4.1-Flash-1017",
+        "name": "DeepSeek V4.1 Flash (EnMaaS)",
         "capabilities": {"optionDescriptors": []}
       }]
     }
+  },
+  "claude-enmaas-anthropic": {
+    "driver": "claudeAgent",
+    "displayName": "Claude via EnMaaS (Haiku)",
+    "enabled": false,
+    "config": {"binaryPath": "bin/claude-enmaas"}
   },
   "claude-vertex": {
     "driver": "claudeAgent",

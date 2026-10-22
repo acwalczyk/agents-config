@@ -150,7 +150,8 @@ value = 42
         self.write(".t3/userdata/client-settings.json", {
             "futurePreference": CANARY,
             "providerModelPreferences": {
-                "codex": other_preferences, "claudeAgent": other_preferences,
+                "codex": other_preferences,
+                "claudeAgent": {"hiddenModels": ["keep-hidden"], "modelOrder": ["keep-first"], "future": True},
                 "claude-enmaas": {"hiddenModels": [], "modelOrder": [], "future": True},
             },
         })
@@ -168,21 +169,42 @@ value = 42
         self.assertEqual(value["providerInstances"]["existing"]["displayName"], "Keep")
         self.assertEqual(value["providerInstances"]["claude-vertex"]["config"]["customModels"], ["keep"])
         self.assertEqual(value["futureSetting"]["secret"], CANARY)
-        for profile in ("vertex", "enmaas"):
-            item = value["providerInstances"][f"claude-{profile}"]
+        for instance_id, profile in (("claude-vertex", "vertex"), ("claude-enmaas", "enmaas"),
+                                     ("claude-enmaas-anthropic", "enmaas")):
+            item = value["providerInstances"][instance_id]
             self.assertEqual(item["driver"], "claudeAgent")
             self.assertEqual(item["config"]["binaryPath"], str((self.repo / f"bin/claude-{profile}").resolve()))
-        glm = value["providerInstances"]["claude-enmaas"]["config"]["customModels"]
-        self.assertEqual(glm, [{"slug": "rits/zai-org/glm-5-3", "name": "GLM 5.3",
-                                "capabilities": {"optionDescriptors": []}}])
+        self.assertEqual(value["providerInstances"]["claude-enmaas"]["displayName"], "Claude via EnMaaS")
+        self.assertFalse(value["providerInstances"]["claude-enmaas-anthropic"]["enabled"])
+        custom = value["providerInstances"]["claude-enmaas"]["config"]["customModels"]
+        self.assertEqual(custom, [
+            {"slug": "rits/zai-org/glm-5-3", "name": "GLM 5.3 (EnMaaS)",
+             "capabilities": {"optionDescriptors": []}},
+            {"slug": "rits/deepseek-ai/DeepSeek-V4.1-Flash-1017", "name": "DeepSeek V4.1 Flash (EnMaaS)",
+             "capabilities": {"optionDescriptors": []}},
+        ])
         client = json.loads((self.home / ".t3/userdata/client-settings.json").read_text())
         self.assertEqual(client["futurePreference"], CANARY)
-        for instance in ("codex", "claudeAgent"):
-            self.assertEqual(client["providerModelPreferences"][instance], other_preferences)
+        self.assertEqual(client["providerModelPreferences"]["codex"], other_preferences)
+        # Only models the route cannot serve are hidden; everything else shows,
+        # current first and legacy after, as T3 groups it from its manifest.
+        current = ("claude-opus-5-5", "claude-sonnet-5-5", "claude-haiku-5-5")
+        default = client["providerModelPreferences"]["claudeAgent"]
+        self.assertTrue(default["future"])
+        self.assertEqual(default["modelOrder"], [])
+        self.assertIn("claude-haiku-5-5", default["hiddenModels"])
+        self.assertIn("claude-fable-5-1", default["hiddenModels"])
+        for model in ("claude-opus-5-5", "claude-sonnet-5-5", "claude-opus-4-8", "claude-sonnet-4-6",
+                      "claude-haiku-4-5"):
+            self.assertNotIn(model, default["hiddenModels"])
         enmaas = client["providerModelPreferences"]["claude-enmaas"]
         self.assertTrue(enmaas["future"])
-        self.assertIn("claude-sonnet-4-6", enmaas["hiddenModels"])
-        self.assertEqual(enmaas["modelOrder"], [glm[0]["slug"]])
+        self.assertEqual(enmaas["modelOrder"], [])
+        self.assertIn("claude-fable-5-1", enmaas["hiddenModels"])
+        for model in current + ("claude-opus-5", "claude-sonnet-4-6"):
+            self.assertNotIn(model, enmaas["hiddenModels"])
+        retired = client["providerModelPreferences"]["claude-enmaas-anthropic"]
+        self.assertEqual(retired["hiddenModels"], [])
         self.assertFalse((self.home / ".claude").exists())
         self.assertFalse((self.home / ".codex").exists())
 
@@ -217,8 +239,11 @@ value = 42
         self.assertEqual(value["providers"]["codex"]["homePath"], "keep-codex-home")
         self.assertNotIn("binaryPath", value["providers"]["claudeAgent"])
         self.assertFalse(value["providers"]["claudeAgent"]["enabled"])
-        self.assertEqual(instances["claude-enmaas"]["displayName"], "EnMaaS")
+        self.assertEqual(instances["claude-enmaas"]["displayName"], "Claude via EnMaaS")
         self.assertTrue(instances["claude-enmaas"]["enabled"])
+        self.assertFalse(instances["claude-enmaas-anthropic"]["enabled"])
+        self.assertEqual(instances["claude-enmaas-anthropic"]["config"]["binaryPath"],
+                         str((self.repo / "bin/claude-enmaas").resolve()))
         self.assertFalse(instances["claude-vertex"]["enabled"])
         self.assertEqual(history.read_text(), "imported history placeholder")
         before = self.snapshot()

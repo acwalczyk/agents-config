@@ -228,3 +228,44 @@ Automatic approval review rejected T3 computer-use inspection, citing the earlie
 permission restriction and the available native validation route. No workaround
 was attempted. Visual picker confirmation and a full T3 chat remain unverified;
 the native GLM request succeeded.
+
+## Claude model selection by route (October 22, 2026)
+
+The T3 picker now has two Claude entries, `Claude` (Vertex) and `Claude via EnMaaS`,
+each listing the full Claude catalog and hiding only models that route cannot
+serve. This replaced a Haiku-only `Claude via EnMaaS` entry and a separate
+`EnMaaS` entry that hid every Claude model.
+
+Probes used the repository launchers in empty temporary directories with temporary
+Claude state, no tools, no MCP servers, no slash commands and a $0.10 cap per call.
+The EnMaaS key came from the native settings through the process environment; no
+credential was printed. Costs are client estimates, not invoices.
+
+- `GET /v1/models` on EnMaaS listed 11 IDs: Haiku 4.5/5.5, Opus 4.6/4.8/5/5.5,
+  Sonnet 4.6/5/5.5, GLM 5.3 and DeepSeek V4.1 Flash. Fable 5/5.1 and Opus 4.7/4.5
+  are absent, and inference confirmed the gateway does not serve them.
+- Vertex: Opus 5.5, Sonnet 5.5, Opus 4.8, Opus 4.6, Sonnet 5, Sonnet 4.6 and Haiku 4.5
+  returned `OK`. Haiku 5.5 failed with organization policy
+  `vertexai.allowedModels`; Fable 5.1 failed with HTTP 403 (data sharing must be
+  enabled for publisher `anthropic`); Fable 5 failed with the same
+  authentication-failed prefix (full text not read); Opus 5, 4.7 and 4.5 are not
+  available on the deployment. Neither the policy nor data sharing was changed.
+- EnMaaS: every model the catalog lists returned `OK` through the Claude launcher,
+  including Haiku 5.5, Opus 5 and both hosted models (GLM 5.3 and DeepSeek V4.1
+  Flash, the latter for the first time through Claude Code).
+- Alias check: with no default-model variables, `--model sonnet` ran Sonnet 4.5 on
+  Vertex and Sonnet 5.5 on EnMaaS. See "Default model aliases" in
+  `claude-profiles.md`; no change has been made.
+- `config/t3.json` and `config/t3-providers.json` encode the table in
+  `claude-profiles.md`. `make test`: all 19 tests pass, including per-instance
+  visibility, preservation of other providers' preferences and future keys, the
+  disabled retired instance and repeat application.
+- The T3 component was previewed and applied to a copy of the live T3 settings in a
+  temporary destination (not the real home); the result matched the source. The
+  real home was not changed by this work. Earlier notes that "no deployment was
+  applied" were inaccurate: the live T3 settings already contained the Haiku-only
+  entry before this change, so a real `--apply --component t3` is still required
+  to retire it.
+- Picker appearance (current-then-legacy grouping, custom models after the Claude
+  models) and a full T3 chat remain unverified; the grouping is inferred from the
+  `status` field in T3's model manifest, which Codex already uses.

@@ -14,7 +14,7 @@ ordinary Claude arguments. To use GLM 5.3 through EnMaaS:
 /Users/dwalczyk/Development/agents-config/bin/claude-enmaas --model rits/zai-org/glm-5-3
 ```
 
-GLM 5.3 is the selected model for the T3 EnMaaS entry. The terminal command names
+GLM 5.3 and DeepSeek V4.1 Flash are listed in the T3 `Claude via EnMaaS` entry. The terminal command names
 its exact gateway ID; no native model default or Sonnet/Opus/Haiku alias mapping
 was changed. Earlier Sonnet 4.6 testing was a connectivity probe. The user's
 EnMaaS guide identifies `rits/zai-org/glm-5-3` as hosted GLM and documents support
@@ -51,18 +51,26 @@ and [CLI settings overrides](https://code.claude.com/docs/en/cli-reference).
 
 The desired T3 picker has three active provider entries:
 
-| Instance | Driver | Executable |
-| --- | --- | --- |
-| OpenAI / Codex | Existing native Codex provider | Existing configuration |
-| Claude | Claude Code Agent SDK | Repository `bin/claude-vertex` |
-| EnMaaS | Claude Code Agent SDK | Repository `bin/claude-enmaas` |
+| Instance | Driver | Executable | Models |
+| --- | --- | --- | --- |
+| OpenAI / Codex | Existing native Codex provider | Existing configuration | All T3 models, current then legacy |
+| Claude | Claude Code Agent SDK | Repository `bin/claude-vertex` | Claude models Vertex serves, current then legacy |
+| Claude via EnMaaS | Claude Code Agent SDK | Repository `bin/claude-enmaas` | Claude models the gateway serves, then GLM 5.3 and DeepSeek V4.1 Flash |
 
 The Claude entry uses T3's existing `claudeAgent` instance ID. T3 automatically
 creates this default instance when it has no explicit entry; adding two new named
 Claude instances without consolidating it produced four picker entries. The extra
 `claude-vertex` instance is now explicitly disabled and retained for history
-references. `claude-enmaas` keeps its ID and is displayed as `EnMaaS`.
-Imported threads and authentication are not removed or reimported.
+references. `claude-enmaas` keeps its ID and is displayed as `Claude via EnMaaS`.
+`claude-enmaas-anthropic`, a short-lived Haiku-only entry, is kept disabled so that
+applying the configuration turns it off in settings that already contain it; it can
+be dropped once no machine has it. Imported threads and authentication are not
+removed or reimported.
+
+The route comes from the launcher, not the model, so each Claude entry lists the
+whole Claude catalog and hides only the models that route cannot serve (measured,
+see below). T3 groups the remaining models from its manifest: `current` first, then
+`legacy`, as it does for Codex. Nothing is hidden because it is merely old.
 
 Chezmoi expands executable paths relative to this repository and merges those
 instances into `~/.t3/userdata/settings.json`. When explicitly configuring the
@@ -70,14 +78,31 @@ default instance for the first time, the modifier carries forward its existing
 legacy provider configuration before applying selected fields. Other settings
 and provider entries remain intact. Moving the repository requires reapplying
 the T3 configuration.
-EnMaaS has one custom entry named GLM 5.3 with that exact model ID. Its capability
-descriptors are empty to avoid advertising Claude-specific reasoning, fast-mode
-or context controls. No title-generation provider or existing thread is changed.
+`Claude via EnMaaS` has two custom entries, GLM 5.3 (EnMaaS) and DeepSeek V4.1 Flash
+(EnMaaS), pinned to their exact gateway IDs and listed after the Claude models.
+Their capability descriptors are empty to avoid advertising Claude-specific
+reasoning, fast-mode or context controls. No title-generation provider or existing
+thread is changed.
 
-`config/t3.json` hides the 13 built-in Claude models in T3's current cached catalog
-only for `claude-enmaas` and puts GLM first. The client-settings modifier merges
-per instance, preserving other providers' preferences. This finite visibility list
-should be reviewed when T3 adds models; it is not an automatic future-model filter.
+`config/t3.json` holds one visibility block per instance. Each block sets
+`hiddenModels` and an empty `modelOrder`; the client-settings modifier replaces
+those two settings per instance and preserves other providers' preferences and
+unrelated keys. The hidden models are the ones that failed an inference probe on
+that route on October 22, 2026:
+
+| Model | Vertex (`Claude`) | EnMaaS (`Claude via EnMaaS`) |
+| --- | --- | --- |
+| Fable 5.1 | hidden: 403, requires data sharing for publisher `anthropic` | hidden: not served |
+| Fable 5 | hidden: same authentication-failed prefix as Fable 5.1; full text not read | hidden: not served |
+| Haiku 5.5 | hidden: blocked by org policy `vertexai.allowedModels` | works |
+| Opus 5 | hidden: not available on the Vertex deployment | works |
+| Opus 4.7, Opus 4.5 | hidden: not available | hidden: not served |
+| Opus 5.5, Sonnet 5.5, Opus 4.8/4.6, Sonnet 5/4.6, Haiku 4.5 | works | works |
+
+This list is a measured snapshot, not a future-model filter. New models T3 adds
+appear on both routes until they are probed; re-run the probe and review the lists
+when T3's manifest changes or an administrator changes Vertex access. Gemini 3.8
+Flash is not advertised by this gateway's `/v1/models`, so it is not configured.
 
 Preview/apply just these T3 entries with:
 
@@ -87,14 +112,14 @@ Preview/apply just these T3 entries with:
 ```
 
 For the first T3 test, start a new local thread in an empty test project, choose
-EnMaaS and GLM 5.3, and ask it to reply OK
-without using tools. Choose Claude on another new thread for the Vertex test.
-The terminal launchers invoke the same native Claude binary used through T3.
+Claude via EnMaaS and GLM 5.3, and ask it to reply OK without using tools. Repeat
+with Haiku 5.5 on Claude via EnMaaS and with Sonnet 5.5 on Claude (Vertex), each on
+a new thread. The terminal launchers invoke the same native Claude binary used
+through T3.
 
-The separate EnMaaS entry uses the native Claude agent as its client and retains
-that driver's icon. The model is GLM, served by EnMaaS. The built-in Claude
-catalog is hidden for this entry; Claude/Vertex and Codex keep their model lists.
-Other hosted models require their own supported IDs and capability verification.
+`Claude via EnMaaS` uses the native Claude agent as its client and keeps that
+driver's icon, including for the hosted models. Other hosted models require their
+own supported IDs and capability verification.
 The guide states GLM's limits as 1,000,000 context tokens and 65,536 output tokens;
 this configuration declares no larger window and adds no model-specific limit
 override to other models.
@@ -105,6 +130,16 @@ chat. Its helper text generation has another launch path. Using the named binary
 wrappers applies the routing overlay in both paths and preserves SDK settings.
 This is why the setup does not rely solely on T3's launch-arguments field.
 See the upstream [Claude provider documentation](https://github.com/pingdotgg/t3code/blob/main/docs/user/providers-claude.md).
+
+## Default model aliases
+
+`config/claude.json` sets `"model": "sonnet"`, an alias the CLI resolves per route.
+Probed on October 22, 2026 with no default-model environment variables set:
+through `bin/claude-vertex` it ran **Sonnet 4.5** (`claude-sonnet-4-5@20250929`),
+and through `bin/claude-enmaas` it ran Sonnet 5.5. T3 is unaffected because it
+sends an explicit model ID; the alias only matters for terminal launches. Fixing it
+(for example `ANTHROPIC_DEFAULT_SONNET_MODEL` in `profiles/claude/vertex.json`) is
+a pending decision because an explicit ID needs updating when the next model ships.
 
 ## Verification
 

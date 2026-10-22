@@ -5,9 +5,10 @@ Claude Code and Codex. Choose an agent for each task. T3 is the proposed shared
 entry point; the existing desktop installation and its state are retained.
 
 **Status:** configuration source prepared and tested. Both Claude provider profiles
-are available. T3 is configured for OpenAI/Codex, Claude (Vertex), and EnMaaS
-(GLM 5.3), with the extra named Vertex instance disabled. Full T3 chat
-verification is pending. Selected user-level team plugins have been refreshed,
+are available. T3 is configured for OpenAI/Codex, Claude (Vertex) and Claude via
+EnMaaS, which also lists GLM 5.3 and DeepSeek V4.1 Flash; each Claude entry hides
+only the models its route cannot serve. The extra named Vertex instance is disabled.
+Full T3 chat verification is pending. Selected user-level team plugins have been refreshed,
 and Codex's older personal Jira plugin is disabled with its installation retained.
 Claude's declared dependencies are installed and its native load checks pass.
 The approved shared/agent instructions are deployed globally to Claude and Codex.
@@ -111,9 +112,9 @@ database and authentication. No native configuration file is symlinked into Git.
 - The existing personal `review-code-changes` skill is copied unchanged and
   deployed to its current Codex location. Divergence blocks deployment.
 - T3 server/client settings are deployed from the populated source definitions.
-  The source reuses the default Claude instance, adds EnMaaS and disables the extra
-  Vertex instance. Client preferences select EnMaaS model visibility only; other
-  providers' preferences are preserved. Claude's top-level `.claude.json` is ignored
+  The source reuses the default Claude instance, adds Claude via EnMaaS and disables
+  the extra Vertex instance. Client preferences set per-route model visibility;
+  other providers' preferences are preserved. Claude's top-level `.claude.json` is ignored
   unless custom MCP definitions are populated.
 
 The merge preserves parsed JSON/TOML values. Formatting and TOML comments may
