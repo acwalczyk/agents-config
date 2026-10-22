@@ -23,7 +23,13 @@ print(json.dumps({'settings':json.loads(path.read_text()),'path':str(path),
  'env':{k:os.environ.get(k) for k in ['CLAUDE_CODE_USE_VERTEX','ANTHROPIC_BASE_URL','ANTHROPIC_API_KEY']}}))
 ''')
         self.binary.chmod(0o755)
+        self.env_file = self.base / "env"
+        self.env_file.write_text("# comment line\n"
+                                 "ENMAAS_URL=https://profile-test.invalid\n"
+                                 'VERTEX_PROJECT_ID="profile-test-project"\n'
+                                 "IGNORED_NO_EQUALS\n")
         self.env = {**os.environ, "CLAUDE_NATIVE_BINARY": str(self.binary),
+                    "AGENTS_CONFIG_ENV": str(self.env_file),
                     "CLAUDE_CODE_USE_VERTEX": "1", "ANTHROPIC_BASE_URL": "https://stale.invalid",
                     "ANTHROPIC_API_KEY": "SYNTHETIC_CREDENTIAL"}
 
@@ -52,16 +58,30 @@ print(json.dumps({'settings':json.loads(path.read_text()),'path':str(path),
                     self.assertEqual(data["settings"]["env"]["CLAUDE_CODE_USE_VERTEX"], "1")
                     self.assertEqual(data["env"]["ANTHROPIC_API_KEY"], "")
                     self.assertEqual(data["settings"]["env"]["ANTHROPIC_BASE_URL"], "")
+                    self.assertEqual(data["settings"]["env"]["ANTHROPIC_VERTEX_PROJECT_ID"], "profile-test-project")
                 else:
                     self.assertEqual(data["settings"]["env"]["CLAUDE_CODE_USE_VERTEX"], "")
                     self.assertEqual(data["env"]["ANTHROPIC_API_KEY"], "SYNTHETIC_CREDENTIAL")
                     self.assertNotIn("ANTHROPIC_API_KEY", data["settings"]["env"])
+                    self.assertEqual(data["settings"]["env"]["ANTHROPIC_BASE_URL"], "https://profile-test.invalid")
+                    self.assertEqual(data["env"]["ANTHROPIC_BASE_URL"], "https://profile-test.invalid")
 
     def test_invalid_settings_fail_without_disclosing_contents(self):
         result = subprocess.run([str(ROOT / "bin/claude-enmaas"), "--settings", '{"secret":"DO_NOT_PRINT'],
                                 env=self.env, capture_output=True, text=True, timeout=10)
         self.assertNotEqual(result.returncode, 0)
         self.assertNotIn("DO_NOT_PRINT", result.stdout + result.stderr)
+
+    def test_missing_local_value_fails_closed_with_guidance(self):
+        incomplete = self.base / "incomplete-env"
+        incomplete.write_text("ENMAAS_URL=\n")
+        result = subprocess.run([str(ROOT / "bin/claude-enmaas")],
+                                env={**self.env, "AGENTS_CONFIG_ENV": str(incomplete)},
+                                capture_output=True, text=True, timeout=10)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("ENMAAS_URL", result.stderr)
+        self.assertIn(".env.example", result.stderr)
+        self.assertNotIn("SYNTHETIC_CREDENTIAL", result.stdout + result.stderr)
 
     def test_provider_defaults_remain_unchanged_and_prompt_separator_is_preserved(self):
         environment = {**self.env, "ANTHROPIC_DEFAULT_SONNET_MODEL": "inherited-model"}

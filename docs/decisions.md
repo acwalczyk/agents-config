@@ -4,7 +4,11 @@
 
 The portable layer consists of instructions, selected preferences, plugin
 selection and custom MCP definitions. Authentication and application state stay
-native. No central credential `.env` or model-routing proxy is introduced.
+native. Environment-specific identifiers (the gateway endpoint and the Vertex
+project ID) live in a local, gitignored `.env` created from `.env.example`;
+committed profile overlays reference them with `${NAME}` placeholders, and the
+launchers fail closed when a referenced value is missing. `.env` never holds
+credentials. No model-routing proxy is introduced.
 Choosing Claude Code or Codex per task does not require transcript conversion.
 
 Use one deployment owner: chezmoi. Native selective modifiers preserve other

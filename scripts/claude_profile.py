@@ -4,6 +4,7 @@
 import json
 import os
 from pathlib import Path
+import re
 import shutil
 import signal
 import subprocess
@@ -11,6 +12,40 @@ import sys
 import tempfile
 
 ROOT = Path(__file__).resolve().parent.parent
+PLACEHOLDER = re.compile(r"\$\{([A-Za-z_][A-Za-z0-9_]*)\}")
+
+
+class MissingEnvValue(ValueError):
+    """A profile placeholder has no non-empty value in the local env file."""
+
+
+def load_env_file(path):
+    """Parse KEY=VALUE lines from a local env file; skip blanks, comments, malformed lines."""
+    values = {}
+    if not path.is_file():
+        return values
+    for line in path.read_text().splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, value = line.partition("=")
+        key, value = key.strip(), value.strip()
+        if len(value) >= 2 and value[0] == value[-1] and value[0] in ("'", '"'):
+            value = value[1:-1]
+        if key:
+            values[key] = value
+    return values
+
+
+def expand_placeholders(overlay, values):
+    """Replace ${NAME} references in overlay env values; fail closed when a value is missing."""
+    def substitute(match):
+        name = match.group(1)
+        if not values.get(name):
+            raise MissingEnvValue(name)
+        return values[name]
+    for key, value in overlay.get("env", {}).items():
+        overlay["env"][key] = PLACEHOLDER.sub(substitute, value)
 
 
 def merge(base, overlay):
@@ -57,6 +92,8 @@ def main():
     try:
         arguments, settings = settings_arguments(sys.argv[2:])
         overlay = json.loads((ROOT / f"profiles/claude/{profile}.json").read_text())
+        env_file = Path(os.environ.get("AGENTS_CONFIG_ENV") or ROOT / ".env")
+        expand_placeholders(overlay, load_env_file(env_file))
         merge(settings, overlay)
         environment = dict(os.environ)
         environment.update(overlay["env"])
@@ -80,6 +117,10 @@ def main():
                 signal.signal(signum, forward)
             result = child.wait()
         sys.exit(result if result >= 0 else 128 - result)
+    except MissingEnvValue as error:
+        # Names and paths only; no profile or settings contents are exposed.
+        sys.exit(f"Claude profile launch failed: {error.args[0]} has no value; "
+                 f"copy .env.example to {env_file} and fill it in")
     except (OSError, ValueError):
         sys.exit("Claude profile launch failed: check native binary, profile JSON and --settings inputs (contents suppressed)")
 

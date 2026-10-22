@@ -2,7 +2,7 @@
   "env": {
     "CLAUDE_CODE_USE_VERTEX": "1",
     "CLOUD_ML_REGION": "global",
-    "ANTHROPIC_VERTEX_PROJECT_ID": "example-vertex-project",
+    "ANTHROPIC_VERTEX_PROJECT_ID": "${VERTEX_PROJECT_ID}",
     "CLAUDE_CODE_USE_BEDROCK": "",
     "CLAUDE_CODE_USE_FOUNDRY": "",
     "CLAUDE_CODE_USE_ANTHROPIC_AWS": "",

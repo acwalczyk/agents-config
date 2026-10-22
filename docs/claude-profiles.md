@@ -24,16 +24,20 @@ that `/v1/models` can omit hosted models, so this supported ID is pinned locally
 ## What the launchers do
 
 1. Read the selected non-secret overlay in `profiles/claude/`.
-2. Merge any `--settings` files/JSON supplied by the caller, including T3's SDK.
-3. Apply provider-routing overrides last in both process environment and settings.
-4. Run the installed native `claude` executable, preserving stdin/stdout and
+2. Expand `${NAME}` placeholders in the overlay from the local gitignored
+   `.env` (copy `.env.example` to create it); a missing value stops the launch.
+3. Merge any `--settings` files/JSON supplied by the caller, including T3's SDK.
+4. Apply provider-routing overrides last in both process environment and settings.
+5. Run the installed native `claude` executable, preserving stdin/stdout and
    forwarding cancellation signals. Remove the private temporary overlay on exit.
 
-Vertex sets its existing GCP project and global region and clears gateway URL,
+Vertex sets its existing GCP project (ID from `.env`) and global region and
+clears gateway URL,
 Anthropic credentials and other provider selectors for that process. Google
 Application Default Credentials remain local and are used normally.
 
-EnMaaS clears the cloud-provider selectors, sets the gateway endpoint, and reuses
+EnMaaS clears the cloud-provider selectors, sets the gateway endpoint from
+`.env`, and reuses
 the existing native `ANTHROPIC_API_KEY`. The key is omitted from the profile file.
 The original user settings and shell startup files are unchanged. Plain `claude`
 therefore retains its old behavior; use a named launcher for predictable routing.

@@ -20,6 +20,7 @@ and [plugin selection](docs/plugin-selection.md).
 ```text
 agents-config/
 ├── AGENTS.md                  # Instructions for maintaining this repository
+├── .env.example               # Template for local endpoint/project values (copy to .env)
 ├── instructions/              # Common personal rules + Claude/Codex additions
 ├── config/                    # Selected non-secret native settings
 ├── profiles/claude/           # Explicit Vertex and EnMaaS routing overlays
@@ -42,6 +43,13 @@ agents-config/
 Requirements: Python 3.11+ and chezmoi 2.73.3+. Both are now available on this
 machine's PATH. For another Mac, install chezmoi with `brew install chezmoi`, or
 review `tools/Brewfile` before using `brew bundle --file=tools/Brewfile`.
+
+Local values: the profile launchers (`bin/claude-vertex`, `bin/claude-enmaas`)
+read environment-specific values — the EnMaaS endpoint and the Vertex project
+ID — from a local, gitignored `.env`. After cloning, copy `.env.example` to
+`.env` and fill in your values; a launcher fails closed, naming the missing
+variable, until you do. Credentials never go into `.env`; they stay in the
+agents' native authentication stores.
 
 ```sh
 ./scripts/doctor.sh                         # Local inventory; no inference or network
@@ -115,7 +123,10 @@ existing installations while preserving their files. Fresh machines do not get
 placeholder entries for legacy plugins that were never installed.
 
 Credentials, auth files, local backups, logs, chats, caches and databases stay
-outside Git. No consolidated credential `.env` is created. Read
+outside Git. Environment-specific identifiers (the EnMaaS endpoint, the Vertex
+project ID) live only in the local `.env` created from `.env.example`; committed
+profiles reference them with `${NAME}` placeholders, and launchers fail closed
+when a value is missing. `.env` holds identifiers, never credentials. Read
 [the inventory](docs/inventory.md), [migration steps](docs/migration.md) and
 [design decisions and references](docs/decisions.md) before cutover.
 

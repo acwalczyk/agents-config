@@ -23,8 +23,9 @@ changes are recorded in `claude-profiles.md` and `plugin-selection.md`.
 
 1. **Claude provider ambiguity.** `~/.claude/settings.json` contains an EnMaaS
    endpoint and native credential. `~/.zshrc` and `~/.bashrc` load
-   `~/.config/claude-code-vertex/env.sh`, enabling Vertex, project
-   `example-vertex-project`, region `global`. HCP's `.ai-config.sh` adds further model
+   `~/.config/claude-code-vertex/env.sh`, enabling Vertex with its GCP project
+   (ID kept in the local gitignored `.env`; see README.md), region `global`.
+   HCP's `.ai-config.sh` adds further model
    and effort variables. The actual effective provider was not established by a
    paid request. Resolve the desired provider before changing any of these.
 2. **Multiple configuration sources.** `~/Development/HCP/.ai-config.sh` and
