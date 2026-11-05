@@ -221,8 +221,9 @@ models for EnMaaS and put GLM first. Other providers' preferences are merged int
   unchanged. No history database or project file was a deployment target.
 
 The GLM visibility list reflects the current catalog and needs review when T3
-adds models. No native CLI defaults, model aliases, global title model, larger
-context window or other hosted models were configured.
+adds models. At that point no native CLI defaults, model aliases, global title
+model, larger context window or other hosted models were configured; the route
+alias pins were added later (see November 5, 2026).
 
 Automatic approval review rejected T3 computer-use inspection, citing the earlier
 permission restriction and the available native validation route. No workaround
@@ -255,7 +256,7 @@ credential was printed. Costs are client estimates, not invoices.
   Flash, the latter for the first time through Claude Code).
 - Alias check: with no default-model variables, `--model sonnet` ran Sonnet 4.5 on
   Vertex and Sonnet 5.5 on EnMaaS. See "Default model aliases" in
-  `claude-profiles.md`; no change has been made.
+  `claude-profiles.md`; the pins were added on November 5, 2026.
 - `config/t3.json` and `config/t3-providers.json` encode the table in
   `claude-profiles.md`. `make test`: all 19 tests pass, including per-instance
   visibility, preservation of other providers' preferences and future keys, the
@@ -269,3 +270,27 @@ credential was printed. Costs are client estimates, not invoices.
 - Picker appearance (current-then-legacy grouping, custom models after the Claude
   models) and a full T3 chat remain unverified; the grouping is inferred from the
   `status` field in T3's model manifest, which Codex already uses.
+
+## Route alias pins (November 5, 2026)
+
+Both route overlays now pin `ANTHROPIC_DEFAULT_{OPUS,SONNET,HAIKU}_MODEL`:
+Vertex uses Opus 5.5, Sonnet 5.5 and Haiku 4.5; EnMaaS uses Opus 5.5, Sonnet 5.5
+and Haiku 5.5. The difference is Vertex's organization policy block on Haiku 5.5.
+The overlay is applied after caller `--settings`, so a shell or SDK value cannot
+leave a stale mapping; plain `claude` without a launcher is unchanged.
+
+- Probes ran the repository launchers in empty temporary working directories with
+  temporary `CLAUDE_CONFIG_DIR`, no tools/MCP and one turn:
+  `--print --output-format json --max-turns 1 --model <alias>` with prompt
+  `Reply with OK`.
+- All six probes returned `is_error: false` and `OK`. Main models from
+  `modelUsage`: Vertex opus `claude-opus-5-5`, sonnet `claude-sonnet-5-5`, haiku
+  `claude-haiku-4-5`; EnMaaS opus `claude-opus-5-5`, sonnet `claude-sonnet-5-5`,
+  haiku `claude-haiku-5-5`. Helper calls (`claude-haiku-4-5` on Vertex,
+  `claude-haiku-5-5` on EnMaaS) are separate entries, not the main model.
+- Costs were not recorded for these single-turn calls.
+- `make test`: all 20 tests pass, including per-route pins, precedence over caller
+  values and prompt-separator preservation.
+- Not verified: alias resolution inside subagents, full T3 runtime with these
+  overlays, behavior under `CLAUDE_CODE_PROVIDER_MANAGED_BY_HOST`, and any applied
+  deployment. No `--apply` was run for this change.

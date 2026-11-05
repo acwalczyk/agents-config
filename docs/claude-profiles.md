@@ -15,11 +15,12 @@ ordinary Claude arguments. To use GLM 5.3 through EnMaaS:
 ```
 
 GLM 5.3 and DeepSeek V4.1 Flash are listed in the T3 `Claude via EnMaaS` entry. The terminal command names
-its exact gateway ID; no native model default or Sonnet/Opus/Haiku alias mapping
-was changed. Earlier Sonnet 4.6 testing was a connectivity probe. The user's
-EnMaaS guide identifies `rits/zai-org/glm-5-3` as hosted GLM and documents support
-through the Anthropic Messages endpoint used by Claude Code. It also explains
-that `/v1/models` can omit hosted models, so this supported ID is pinned locally.
+its exact gateway ID; the Sonnet/Opus/Haiku aliases are pinned per route (see
+[Default model aliases](#default-model-aliases)). Earlier Sonnet 4.6 testing was
+a connectivity probe. The user's EnMaaS guide identifies `rits/zai-org/glm-5-3`
+as hosted GLM and documents support through the Anthropic Messages endpoint used
+by Claude Code. It also explains that `/v1/models` can omit hosted models, so this
+supported ID is pinned locally.
 
 ## What the launchers do
 
@@ -133,13 +134,29 @@ See the upstream [Claude provider documentation](https://github.com/pingdotgg/t3
 
 ## Default model aliases
 
-`config/claude.json` sets `"model": "sonnet"`, an alias the CLI resolves per route.
-Probed on October 22, 2026 with no default-model environment variables set:
-through `bin/claude-vertex` it ran **Sonnet 4.5** (`claude-sonnet-4-5@20250929`),
-and through `bin/claude-enmaas` it ran Sonnet 5.5. T3 is unaffected because it
-sends an explicit model ID; the alias only matters for terminal launches. Fixing it
-(for example `ANTHROPIC_DEFAULT_SONNET_MODEL` in `profiles/claude/vertex.json`) is
-a pending decision because an explicit ID needs updating when the next model ships.
+`config/claude.json` sets `"model": "sonnet"`, an alias the CLI resolves using the
+`ANTHROPIC_DEFAULT_*_MODEL` variables. Each launcher now pins all three aliases in
+its route overlay:
+
+| Alias | Vertex (`bin/claude-vertex`) | EnMaaS (`bin/claude-enmaas`) |
+| --- | --- | --- |
+| opus | `claude-opus-5-5` | `claude-opus-5-5` |
+| sonnet | `claude-sonnet-5-5` | `claude-sonnet-5-5` |
+| haiku | `claude-haiku-4-5` | `claude-haiku-5-5` |
+
+Haiku differs because Vertex blocks Haiku 5.5 by org policy
+(`vertexai.allowedModels`); Haiku 4.5 is the newest Haiku that route serves.
+
+The pins live in the launcher overlay and are applied after caller `--settings`,
+so a stale shell or SDK value cannot silently win. Plain `claude`, which does not
+use a launcher, keeps its existing behavior. T3 sends explicit model IDs for its
+picker, so these aliases do not override the selected T3 model; the pins matter
+for terminal launches, SDK callers that pass an alias, and agent frontmatter that
+names `opus`, `sonnet` or `haiku`.
+
+Before pinning, the unpinned alias resolved to **Sonnet 4.5**
+(`claude-sonnet-4-5@20250929`) on Vertex when probed on October 22, 2026. An
+explicit pin needs updating when a newer model replaces these.
 
 ## Verification
 
@@ -170,6 +187,30 @@ On October 21, 2026:
 - Automatic approval review rejected a renewed T3 computer-use inspection because
   of the earlier permission restriction. No workaround was attempted. The picker
   appearance and full T3 chat remain unverified; native GLM inference passed.
+
+On November 5, 2026:
+
+- Added the per-route alias pins to `profiles/claude/vertex.json` and
+  `profiles/claude/enmaas.json`; profile tests assert both the settings overlay and
+  the process environment, including precedence over caller values. `make test`
+  passed 20 tests.
+- Probed every alias through its launcher from an empty working directory with a
+  temporary `CLAUDE_CONFIG_DIR`, no project instructions and no tools or MCP
+  servers, using `--print --output-format json --max-turns 1 --model <alias>` and
+  the prompt `Reply with OK`. Each call returned `is_error: false` and result
+  `OK`. Main-model IDs from `modelUsage`:
+  - Vertex: opus `claude-opus-5-5`, sonnet `claude-sonnet-5-5`, haiku
+    `claude-haiku-4-5`.
+  - EnMaaS: opus `claude-opus-5-5`, sonnet `claude-sonnet-5-5`, haiku
+    `claude-haiku-5-5`.
+- Helper calls appeared separately in `modelUsage` (`claude-haiku-4-5` on Vertex,
+  `claude-haiku-5-5` on EnMaaS) and are not the main model.
+- These calls were not cost-capped beyond the single turn, and their reported cost
+  was not recorded. No deployment was applied: previews and `--apply` were not run
+  for this change.
+- Not verified: alias resolution inside subagents, full T3 runtime with the updated
+  overlays, and behavior when a host-managed provider
+  (`CLAUDE_CODE_PROVIDER_MANAGED_BY_HOST`) supplies its own model configuration.
 
 Costs above are values reported by the CLI for these tests, not verified provider
 invoices or agreed model prices. Pricing analysis remains a later task.
