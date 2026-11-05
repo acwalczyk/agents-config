@@ -13,8 +13,10 @@ and Codex's older personal Jira plugin is disabled with its installation retaine
 Claude's declared dependencies are installed and its native load checks pass.
 The approved shared/agent instructions are deployed globally to Claude and Codex.
 Retiring old setup guides remains a migration step.
-Developer workflows and costs come later. See [Claude profiles](docs/claude-profiles.md)
-and [plugin selection](docs/plugin-selection.md).
+A weekly, unattended spend review reads local session telemetry and proposes a
+small draft PR with measured cost fixes; it is not applied automatically.
+See [Claude profiles](docs/claude-profiles.md), [plugin selection](docs/plugin-selection.md)
+and the [spend review agent](docs/spend-agent.md).
 
 ## Layout
 
@@ -31,7 +33,8 @@ agents-config/
 │   └── mcp.json               # Explicit custom MCP registrations by host
 ├── dotfiles/                  # Chezmoi native-path templates and selective modifiers
 ├── plugins/manifest.json      # Selected team plugins and marketplace sources
-├── skills/                    # Existing personal skill; new workflows deferred
+├── agents/                    # Unattended role definitions and their bindings
+├── skills/                    # Personal skills and the spend-review pipeline
 ├── tools/Brewfile             # Explicit dependency installation list
 ├── scripts/                   # Setup preview/apply/restore, inventory, update plan
 ├── tests/deployment/          # Real chezmoi tests in temporary destinations

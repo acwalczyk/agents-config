@@ -1,0 +1,85 @@
+{
+  "permissions": {
+    "defaultMode": "dontAsk",
+    "allow": [
+      "Read",
+      "Edit",
+      "Write",
+      "Bash(git *)",
+      "Bash(gh pr create *)",
+      "Bash(gh pr view *)",
+      "Bash(gh pr list *)",
+      "Bash(gh pr diff *)",
+      "Bash(gh auth status)",
+      "Bash(make test)",
+      "Bash(./scripts/setup.sh --check)",
+      "Bash(scripts/setup.sh --check)",
+      "Bash(codeburn optimize --format json *)",
+      "Bash(codeburn optimize --json *)",
+      "Bash(jq *)"
+    ],
+    "deny": [
+      "Bash(git push --force*)",
+      "Bash(git push -f*)",
+      "Bash(git push origin main*)",
+      "Bash(git push -u origin main*)",
+      "Bash(git reset --hard *)",
+      "Bash(git clean *)",
+      "Bash(git rebase *)",
+      "Bash(gh pr merge *)",
+      "Bash(gh pr review *)",
+      "Bash(gh pr comment *)",
+      "Bash(gh pr edit *)",
+      "Bash(gh pr close *)",
+      "Bash(gh pr ready *)",
+      "Bash(gh api *)",
+      "Bash(gh issue *)",
+      "Bash(gh repo *)",
+      "Bash(gh release *)",
+      "Bash(gh workflow *)",
+      "Bash(./scripts/setup.sh --apply*)",
+      "Bash(scripts/setup.sh --apply*)",
+      "Bash(codeburn optimize --apply*)",
+      "Bash(codeburn guard*)",
+      "Bash(rm -rf *)",
+      "Bash(curl *)",
+      "Bash(wget *)",
+      "Bash(osascript *)",
+      "Bash(open *)"
+    ]
+  },
+  "sandbox": {
+    "enabled": true,
+    "failIfUnavailable": true,
+    "allowUnsandboxedCommands": false,
+    "enableWeakerNetworkIsolation": true,
+    "network": {
+      "allowedDomains": [
+        "github.com",
+        "api.github.com",
+        "*.github.com",
+        "*.githubusercontent.com"
+      ]
+    },
+    "filesystem": {
+      "allowRead": [
+        "/Users/dwalczyk/.claude/projects",
+        "/Users/dwalczyk/.codex/sessions",
+        "/Users/dwalczyk/.config/codeburn",
+        "/Users/dwalczyk/.config/gh/config.yml",
+        "/Users/dwalczyk/.config/gh/hosts.yml"
+      ],
+      "allowWrite": [
+        "/Users/dwalczyk/.config/codeburn"
+      ],
+      "denyWrite": [
+        "/Users/dwalczyk/.claude",
+        "/Users/dwalczyk/.codex",
+        "/Users/dwalczyk/.t3",
+        "/Users/dwalczyk/.config/gh",
+        "/Users/dwalczyk/.local/state/agents-config",
+        "/Users/dwalczyk/Development/agents-config"
+      ]
+    }
+  }
+}
