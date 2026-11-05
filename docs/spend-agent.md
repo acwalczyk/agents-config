@@ -157,9 +157,12 @@ and never force push.
 ```
 
 The guard matters because the clone tracks `main`: until the review pipeline is
-merged there, a run has nothing to follow and must not improvise. The spend
-project has `autoPull` enabled so the checkout is current when a run starts, and
-the pipeline also switches to `main` and pulls before branching.
+merged there, a run has nothing to follow and must not improvise. After merging a
+change to this pipeline, pull once in the clone
+(`git -C ~/Development/agents-config-spend pull --ff-only`); `autoPull` is enabled
+on the spend project, but whether it refreshes a bound thread's checkout before a
+run is unverified. Once a run starts, the pipeline switches to `main` and pulls
+before it branches, so later runs stay current without manual help.
 
 Because one thread accumulates every run, its history grows week over week. If it
 gets unwieldy, launch a new root-bound thread and recreate the schedule from it;
@@ -186,6 +189,8 @@ do not switch the schedule back to one-thread-per-run.
   checkout was probed and did *not* hold.
 - Sandboxed `gh` authentication was not exercised: no `gh` command ran in the
   probe thread.
+- Whether the spend project's `autoPull` refreshes a `bindToCurrentThread` thread
+  before a run was not observed. Pull manually after merging pipeline changes.
 - A T3 worktree run was never given the binding. That path is documented as
   wrong rather than tested with the settings present.
 - CodeBurn's savings are estimates derived from local token accounting, not
