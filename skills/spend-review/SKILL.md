@@ -18,13 +18,25 @@ git rev-parse --show-toplevel      # expect .../agents-config-spend
 git status --porcelain             # must be empty; never stash or discard
 ```
 
-If the working tree is dirty or you are in the primary checkout, stop and report
-it. Do not clean, reset or stash.
+If the working tree is dirty or the root is `/Users/dwalczyk/Development/agents-config`,
+stop and report it. Do not clean, reset or stash.
+
+Runs must execute in the checkout root, where `.claude/settings.json` supplies
+this binding. A T3 git worktree under `~/.t3/worktrees/` is created from
+`origin/main` and never contains that file; if the root is under
+`~/.t3/worktrees/`, stop and report that the run is misbound rather than
+continuing unbounded.
+
+Start from current `main` so the pipeline you are reading is the deployed one:
+
+```sh
+git switch main
+git pull --ff-only
+```
 
 Establish a baseline before editing:
 
 ```sh
-git fetch origin
 make test
 ```
 

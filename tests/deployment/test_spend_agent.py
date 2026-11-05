@@ -59,6 +59,16 @@ class SpendAgentTest(unittest.TestCase):
         ):
             self.assertIn(required, skill)
 
+    def test_pipeline_refuses_checkouts_where_the_binding_is_absent(self):
+        # The binding is an untracked .claude/settings.json in the clone root.
+        # A T3 worktree cut from origin/main never has it, and the primary
+        # checkout must never receive the write-capable permissions.
+        skill = (ROOT / "skills/spend-review/SKILL.md").read_text()
+        self.assertIn("~/.t3/worktrees/", skill)
+        self.assertIn("/Users/dwalczyk/Development/agents-config`", skill)
+        self.assertIn("git pull --ff-only", skill)
+        self.assertIn("misbound", skill)
+
     def test_ledger_declares_terminal_verdicts_and_keeps_stable_ids(self):
         ledger = (ROOT / "docs/cost-findings.md").read_text()
         for verdict in ("`observed`", "`proposed`", "`deferred`", "`accepted`", "`rejected`"):

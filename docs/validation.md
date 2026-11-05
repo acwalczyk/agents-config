@@ -269,3 +269,53 @@ credential was printed. Costs are client estimates, not invoices.
 - Picker appearance (current-then-legacy grouping, custom models after the Claude
   models) and a full T3 chat remain unverified; the grouping is inferred from the
   `status` field in T3's model manifest, which Codex already uses.
+
+## Spend review agent binding and trigger (November 5, 2026)
+
+The unattended spend review was set up in a separate clone,
+`/Users/dwalczyk/Development/agents-config-spend`, registered as T3 project
+`mcp:c68f832d-a7be-4a74-97f4-1afb6fd040ff` with default model Claude Sonnet 5.5
+through EnMaaS. Its binding was copied to
+`<clone>/.claude/settings.json` (untracked, excluded through
+`.git/info/exclude`). Nothing was applied to the real home and no native
+configuration changed.
+
+What was run and observed:
+
+- A scheduled task with `bindToCurrentThread: false` ran in a T3 git worktree
+  (`~/.t3/worktrees/agents-config-spend/t3-0eb96604`, branch
+  `t3/weekly-spend-review`). Listing that worktree showed no `.claude/`
+  directory: the untracked binding never reaches a worktree cut from
+  `origin/main` (`newWorktreesStartFromOrigin` is `true`).
+- Setting the project's `defaultThreadEnvMode` to `local` did not change that.
+  A second run created another worktree, `t3-86e846c5` on
+  `t3/weekly-spend-review-1`, and still had no binding.
+- A thread bound to the clone root (`workspaceStrategy: {"type":"root"}`,
+  `worktreePath: null`), running at `full-access` with Sonnet 5.5, did load the
+  binding. `permissions.defaultMode` read back as `dontAsk`, and
+  `curl -sS -o /dev/null -w '%{http_code}' https://example.com` was refused:
+  "Permission to use Bash ... has been denied." Deny rules therefore survive
+  `full-access`.
+- In the same thread, `make test` passed (19 tests, clone at `13cc7bd`),
+  `./scripts/setup.sh --check` exited 0 and reported three pre-existing
+  `UPDATE` rows (`.claude/settings.json`, `.codex/config.toml`,
+  `.t3/userdata/settings.json`), and
+  `codeburn optimize --format json --period week | jq -c '.summary'` returned
+  `{"healthScore":20,"findingCount":9,"sessions":76,"calls":5062,
+  "periodCostUSD":107.94,"potentialSavingsCostUSD":24.91,
+  "potentialSavingsPercent":23.1}`. Savings are CodeBurn's client-side
+  estimates, not invoices.
+- Filesystem read confinement did not hold: `git -C
+  /Users/dwalczyk/Development/agents-config rev-parse --show-toplevel` read the
+  primary checkout although it is outside `allowRead`, and `setup.sh --check`
+  read the native Claude, Codex and T3 files. Write confinement was not probed.
+- The trigger was then recreated as `bindToCurrentThread: true` on a persistent
+  root-bound thread (`mcp:cba74302-cbc7-411d-ba1d-bd72c177a64a`),
+  `scheduled-task:c4a00597-874b-4e63-adf7-c49af49ccb2e`, Mondays 07:00,
+  `nextRunAt` `2026-11-09T13:00:00.000Z`. A manual run posted into that thread
+  with `worktreePath: null` and stopped at the missing-pipeline guard because the
+  clone's `main` predates this pipeline. The earlier worktree-mode schedule was
+  deleted.
+
+Not run: the full pipeline end to end, sandboxed `gh` authentication, sandbox
+write confinement, and any real scheduled (non-manual) run.
