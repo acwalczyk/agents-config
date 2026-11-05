@@ -20,7 +20,7 @@ class ProfileTest(unittest.TestCase):
 args=sys.argv[1:];path=pathlib.Path(args[args.index('--settings')+1])
 print(json.dumps({'settings':json.loads(path.read_text()),'path':str(path),
  'mode':stat.S_IMODE(path.stat().st_mode),'args':args,'stdin':sys.stdin.read(),
- 'env':{k:os.environ.get(k) for k in ['CLAUDE_CODE_USE_VERTEX','ANTHROPIC_BASE_URL','ANTHROPIC_API_KEY']}}))
+ 'env':{k:os.environ.get(k) for k in ['CLAUDE_CODE_USE_VERTEX','ANTHROPIC_BASE_URL','ANTHROPIC_API_KEY','ANTHROPIC_DEFAULT_OPUS_MODEL','ANTHROPIC_DEFAULT_SONNET_MODEL','ANTHROPIC_DEFAULT_HAIKU_MODEL']}}))
 ''')
         self.binary.chmod(0o755)
         self.env_file = self.base / "env"
@@ -38,7 +38,8 @@ print(json.dumps({'settings':json.loads(path.read_text()),'path':str(path),
 
     def test_provider_overrides_preserve_sdk_settings_protocol_and_local_credentials(self):
         source = self.base / "sdk-settings.json"
-        source.write_text(json.dumps({"alwaysThinkingEnabled": False, "env": {"EXTRA": "keep", "CLAUDE_CODE_USE_VERTEX": "stale"}}))
+        source.write_text(json.dumps({"alwaysThinkingEnabled": False, "env": {"EXTRA": "keep", "CLAUDE_CODE_USE_VERTEX": "stale",
+            "ANTHROPIC_DEFAULT_SONNET_MODEL": "sdk-model"}}))
         for profile in ("vertex", "enmaas"):
             with self.subTest(profile=profile):
                 result = subprocess.run([str(ROOT / f"bin/claude-{profile}"), "--settings", str(source),
@@ -65,6 +66,10 @@ print(json.dumps({'settings':json.loads(path.read_text()),'path':str(path),
                     self.assertNotIn("ANTHROPIC_API_KEY", data["settings"]["env"])
                     self.assertEqual(data["settings"]["env"]["ANTHROPIC_BASE_URL"], "https://profile-test.invalid")
                     self.assertEqual(data["env"]["ANTHROPIC_BASE_URL"], "https://profile-test.invalid")
+                # The selected route pins aliases after SDK settings, so a caller
+                # cannot leave a stale alias mapping in place.
+                self.assertEqual(data["settings"]["env"]["ANTHROPIC_DEFAULT_SONNET_MODEL"], "claude-sonnet-5-5")
+                self.assertEqual(data["env"]["ANTHROPIC_DEFAULT_SONNET_MODEL"], "claude-sonnet-5-5")
 
     def test_invalid_settings_fail_without_disclosing_contents(self):
         result = subprocess.run([str(ROOT / "bin/claude-enmaas"), "--settings", '{"secret":"DO_NOT_PRINT'],
@@ -83,7 +88,7 @@ print(json.dumps({'settings':json.loads(path.read_text()),'path':str(path),
         self.assertIn(".env.example", result.stderr)
         self.assertNotIn("SYNTHETIC_CREDENTIAL", result.stdout + result.stderr)
 
-    def test_provider_defaults_remain_unchanged_and_prompt_separator_is_preserved(self):
+    def test_provider_pins_aliases_over_shell_and_preserves_prompt_separator(self):
         environment = {**self.env, "ANTHROPIC_DEFAULT_SONNET_MODEL": "inherited-model"}
         result = subprocess.run([str(ROOT / "bin/claude-enmaas"), "--", "--settings", "literal prompt"],
                                 env=environment, input="", capture_output=True, text=True, timeout=10)
@@ -91,7 +96,24 @@ print(json.dumps({'settings':json.loads(path.read_text()),'path':str(path),
         data = json.loads(result.stdout)
         self.assertEqual(data["args"][-3:], ["--", "--settings", "literal prompt"])
         self.assertNotIn("model", data["settings"])
-        self.assertNotIn("ANTHROPIC_DEFAULT_SONNET_MODEL", data["settings"]["env"])
+        self.assertEqual(data["settings"]["env"]["ANTHROPIC_DEFAULT_SONNET_MODEL"], "claude-sonnet-5-5")
+        self.assertEqual(data["env"]["ANTHROPIC_DEFAULT_SONNET_MODEL"], "claude-sonnet-5-5")
+
+    def test_provider_pins_model_aliases_per_route(self):
+        expected = {
+            "vertex": {"OPUS": "claude-opus-5-5", "SONNET": "claude-sonnet-5-5", "HAIKU": "claude-haiku-4-5"},
+            "enmaas": {"OPUS": "claude-opus-5-5", "SONNET": "claude-sonnet-5-5", "HAIKU": "claude-haiku-5-5"},
+        }
+        for profile, aliases in expected.items():
+            with self.subTest(profile=profile):
+                result = subprocess.run([str(ROOT / f"bin/claude-{profile}")],
+                                        env=self.env, input="", capture_output=True, text=True, timeout=10)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                data = json.loads(result.stdout)
+                for alias, model in aliases.items():
+                    key = f"ANTHROPIC_DEFAULT_{alias}_MODEL"
+                    self.assertEqual(data["settings"]["env"][key], model)
+                    self.assertEqual(data["env"][key], model)
 
     def test_cancellation_reaches_native_process_and_cleans_overlay(self):
         marker = self.base / "stopped"
